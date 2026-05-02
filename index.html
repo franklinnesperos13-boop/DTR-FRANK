@@ -8,8 +8,6 @@
         .sheet { background: white; padding: 15px; max-width: 950px; margin: auto; border: 1px solid #000; }
         .header-title { text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; }
         .info-section { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 0.8rem; font-weight: bold; }
-        
-        /* Editable Inputs for Headers */
         .header-input { border: none; border-bottom: 1px solid #000; font-family: inherit; font-size: 0.8rem; font-weight: bold; width: 70%; padding: 0 5px; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 5px; }
@@ -19,19 +17,22 @@
         .sunday-row { color: #ff0000; } 
         .saturday-row { color: #008000; } 
         .total-highlight { background-color: #e3f2fd !important; color: #0d47a1; font-weight: bold; }
-        
-        /* Wider Space between weeks */
         .week-break-cell { padding-bottom: 25px !important; border-bottom: 3px solid #000 !important; }
 
         input { width: 95%; border: none; text-align: center; font-family: inherit; background: transparent; font-size: 10px; color: inherit; }
         .comment-input { text-align: left; width: 98%; }
         .total-row { background: #fff9c4; color: #333; font-size: 11px; }
         
+        /* Signature Styles */
         .signature-section { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; font-size: 0.8rem; font-weight: bold; }
-        .sig-line { border-top: 1px solid #000; margin-top: 25px; padding-top: 3px; text-align: center; }
+        .sig-container { text-align: center; position: relative; }
+        canvas { border-bottom: 1px solid #000; width: 100%; height: 80px; cursor: crosshair; touch-action: none; background: #fafafa; }
+        .sig-label { margin-top: 5px; }
+        .clear-btn { font-size: 8px; color: red; cursor: pointer; text-decoration: underline; display: block; margin-top: 2px; }
+
         .btn-container { margin-top: 15px; display: flex; gap: 10px; }
         button { flex: 1; padding: 12px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; background: #007bff; color: white; }
-        @media print { .btn-container { display: none; } .sheet { border: 1px solid #000; } }
+        @media print { .btn-container, .clear-btn { display: none; } .sheet { border: 1px solid #000; } canvas { background: transparent; } }
     </style>
 </head>
 <body>
@@ -74,8 +75,16 @@
     </table>
 
     <div class="signature-section">
-        <div class="sig-line">EMPLOYEE</div>
-        <div class="sig-line">MANAGER</div>
+        <div class="sig-container">
+            <canvas id="sig-employee"></canvas>
+            <div class="sig-label">EMPLOYEE</div>
+            <span class="clear-btn" onclick="clearSig('sig-employee')">[Clear Signature]</span>
+        </div>
+        <div class="sig-container">
+            <canvas id="sig-manager"></canvas>
+            <div class="sig-label">MANAGER</div>
+            <span class="clear-btn" onclick="clearSig('sig-manager')">[Clear Signature]</span>
+        </div>
     </div>
 
     <div class="btn-container">
@@ -88,7 +97,6 @@
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const tbody = document.getElementById('sheetBody');
     
-    // Set default values
     document.getElementById('periodEndDate').value = "2026-05-03";
     const today = new Date();
     document.getElementById('customDateDisplay').value = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
@@ -105,26 +113,18 @@
         for (let i = 0; i < 14; i++) {
             let currentDate = new Date(startDate);
             currentDate.setDate(startDate.getDate() + i);
-            
             let dateString = `${currentDate.getDate()} ${months[currentDate.getMonth()]}`;
             let dayName = days[currentDate.getDay()];
-            
-            let rowClass = "";
-            if (dayName === "SUNDAY") rowClass = "sunday-row";
-            if (dayName === "SATURDAY") rowClass = "saturday-row";
-            
-            // Logic for space between weeks
             let isWeekEnd = (i === 6); 
 
             for (let layer = 0; layer < 3; layer++) {
                 let cellStyle = (isWeekEnd && layer === 2) ? "week-break-cell" : "";
-                let row = `<tr class="${rowClass}">`;
+                let row = `<tr class="${dayName === "SUNDAY" ? "sunday-row" : (dayName === "SATURDAY" ? "saturday-row" : "")}">`;
                 
                 if (layer === 0) {
                     row += `<td rowspan="3" class="${cellStyle}" style="text-align: left; background: #fafafa; color: inherit; font-weight: bold;">${dayName}<br>${dateString}</td>`;
                 }
                 
-                // Sunday default is blank (zero), others are 07:00-17:00
                 let defStart = (dayName !== "SUNDAY" && layer === 0) ? "07:00" : "";
                 let defEnd = (dayName !== "SUNDAY" && layer === 0) ? "17:00" : "";
 
@@ -150,7 +150,6 @@
                 const tIn = document.getElementById(`in-${i}-${layer}`).value;
                 const tOut = document.getElementById(`out-${i}-${layer}`).value;
                 const otVal = parseFloat(document.getElementById(`ot-${i}-${layer}`).value) || 0;
-                
                 if (tIn && tOut) {
                     const start = tIn.split(':');
                     const end = tOut.split(':');
@@ -171,9 +170,54 @@
         document.getElementById('overtimeTotal').innerText = otTotal.toFixed(1);
     }
 
-    window.onload = buildTable;
+    // Canvas Signature Logic
+    function initSig(id) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX || e.touches[0].clientX) - rect.left,
+                y: (e.clientY || e.touches[0].clientY) - rect.top
+            };
+        }
+
+        function start(e) { drawing = true; draw(e); }
+        function end() { drawing = false; ctx.beginPath(); }
+        function draw(e) {
+            if (!drawing) return;
+            const pos = getPos(e);
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = "#000";
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        canvas.addEventListener("mousedown", start);
+        canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("mouseup", end);
+        canvas.addEventListener("touchstart", (e) => { e.preventDefault(); start(e); });
+        canvas.addEventListener("touchmove", (e) => { e.preventDefault(); draw(e); });
+        canvas.addEventListener("touchend", end);
+    }
+
+    function clearSig(id) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    window.onload = () => {
+        buildTable();
+        initSig('sig-employee');
+        initSig('sig-manager');
+    };
 </script>
 
 </body>
 </html>
-
