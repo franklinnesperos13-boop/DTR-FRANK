@@ -8,149 +8,106 @@
         body { background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: "Segoe UI", Roboto, sans-serif; overflow: hidden; touch-action: none; }
         .phone-frame { width: 360px; height: 740px; background: #000; border: 4px solid #333; border-radius: 35px; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
         .camera-hole { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #0a0a0a; border-radius: 50%; z-index: 100; }
-        .screen { width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop'); background-size: cover; background-position: center; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
-        .status-bar { width: 100%; display: flex; justify-content: space-between; padding: 12px 20px 0 20px; color: white; font-size: 13px; font-weight: 600; z-index: 50; box-sizing: border-box; }
+        .screen { width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop'); background-size: cover; background-position: center; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; position: relative; }
         
-        /* Clock Section */
-        .main-clock { margin-top: 60px; color: white; text-align: center; text-decoration: none; width: 100%; display: block; transition: 0.1s; }
-        .main-clock:active { transform: scale(0.95); opacity: 0.8; }
-        #big-time { font-size: 72px; font-weight: 200; margin: 0; letter-spacing: -2px; }
+        .status-bar { width: 100%; display: flex; justify-content: space-between; padding: 12px 20px 0 20px; color: white; font-size: 13px; font-weight: 600; z-index: 150; box-sizing: border-box; position: absolute; top: 0; }
+        
+        /* Clock */
+        .main-clock { margin-top: 60px; color: white; text-align: center; text-decoration: none; width: 100%; display: block; z-index: 10; }
+        #big-time { font-size: 72px; font-weight: 200; margin: 0; }
         #big-date { font-size: 16px; margin-top: -5px; opacity: 0.9; }
 
-        /* App Grid Section */
-        .app-grid { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: auto; margin-bottom: 50px; position: relative; }
-        .app-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; -webkit-tap-highlight-color: transparent; }
-        .icon { width: 58px; height: 58px; border-radius: 18px; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-bottom: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: none; }
-        .label { color: white; font-size: 11px; text-shadow: 1px 1px 3px #000; pointer-events: none; }
+        /* App Grid */
+        .app-grid { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: auto; margin-bottom: 50px; z-index: 10; }
+        .app-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .icon { width: 58px; height: 58px; border-radius: 18px; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-bottom: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .label { color: white; font-size: 11px; text-shadow: 1px 1px 3px #000; }
+
+        /* TAPO OVERLAY (Ang "App" sa loob ng website) */
+        #tapoApp { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f4f4f4; z-index: 200; display: none; flex-direction: column; color: #333; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
-        .dragging { opacity: 0.5; transform: scale(1.1); z-index: 1000; }
+        .tapo-header { background: white; padding: 40px 20px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; font-weight: bold; color: #00a0e9; }
+        .tapo-content { padding: 15px; flex: 1; overflow-y: auto; }
+        .cam-preview { width: 100%; height: 180px; background: #000; border-radius: 10px; margin-bottom: 15px; position: relative; overflow: hidden; }
+        .cam-preview img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+        .cam-label { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.5); color: white; padding: 2px 8px; border-radius: 5px; font-size: 10px; }
     </style>
 </head>
 <body>
 
     <div class="phone-frame">
         <div class="camera-hole"></div>
+        
         <div class="status-bar">
             <span id="status-time">00:00</span>
-            <div><span id="battery-level">--%</span> 🔋</div>
+            <div><span id="battery-level">100%</span> 🔋</div>
         </div>
 
         <div class="screen">
             <a href="clock-app.html" class="main-clock">
                 <h1 id="big-time">00:00</h1>
-                <p id="big-date">Date Loading...</p>
+                <p id="big-date">Loading...</p>
             </a>
 
             <div class="app-grid" id="appGrid">
-                <a href="dtr-app.html" class="app-item" data-app="dtr">
+                <a href="dtr-app.html" class="app-item">
                     <div class="icon" style="background: white;">📅</div>
                     <span class="label">DTR</span>
                 </a>
-                <a href="solar-app.html" class="app-item" data-app="solar">
+                <a href="solar-app.html" class="app-item">
                     <div class="icon" style="background: linear-gradient(135deg, #FF8C00, #FFD700);">☀️</div>
                     <span class="label">Solar</span>
                 </a>
-                <a href="tapo://" class="app-item" data-app="tapo">
+                <div class="app-item" onclick="openTapo()">
                     <div class="icon" style="background: #00a0e9;">📹</div>
                     <span class="label">Tapo</span>
-                </a>
-                <a href="messenger-app.html" class="app-item" data-app="chat">
+                </div>
+                <a href="messenger-app.html" class="app-item">
                     <div class="icon" style="background: linear-gradient(135deg, #00B2FF, #006AFF);">💬</div>
                     <span class="label">Chat</span>
                 </a>
-                <a href="camera-app.html" class="app-item" data-app="camera">
-                    <div class="icon" style="background: #f0f0f0;">📷</div>
-                    <span class="label">Camera</span>
-                </a>
+            </div>
+
+            <div id="tapoApp">
+                <div class="tapo-header">
+                    <span>Tapo Smart</span>
+                    <button onclick="closeTapo()" style="border:none; background:none; color:#00a0e9; font-size:18px;">✕</button>
+                </div>
+                <div class="tapo-content">
+                    <p style="font-size: 12px; color: #888;">My Home</p>
+                    <div class="cam-preview">
+                        <div class="cam-label">● Live - Gate Camera</div>
+                        <img src="https://images.unsplash.com/photo-1558036117-15d82a90b9b1?q=80&w=500">
+                    </div>
+                    <div class="cam-preview">
+                        <div class="cam-label">● Live - Living Room</div>
+                        <img src="https://images.unsplash.com/photo-1585127659132-67a7c2e42677?q=80&w=500">
+                    </div>
+                    <div style="background:white; padding:15px; border-radius:10px; text-align:center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <span style="color:#00a0e9;">+ Add New Device</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 1. Clock & Battery logic
+        // Clock Logic
         function updateClock() {
             const now = new Date();
-            const h = now.getHours().toString().padStart(2, '0');
-            const m = now.getMinutes().toString().padStart(2, '0');
-            const time = h + ":" + m;
+            const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
             document.getElementById('status-time').textContent = time;
             document.getElementById('big-time').textContent = time;
-            const options = { weekday: 'long', month: 'long', day: 'numeric' };
-            document.getElementById('big-date').textContent = now.toLocaleDateString('en-PH', options);
+            document.getElementById('big-date').textContent = now.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' });
         }
 
-        async function updateBattery() {
-            try {
-                const b = await navigator.getBattery();
-                document.getElementById('battery-level').textContent = Math.floor(b.level * 100) + "%";
-            } catch (e) { document.getElementById('battery-level').textContent = "100%"; }
-        }
-
-        // 2. Drag & Drop with Click Support
-        const grid = document.getElementById('appGrid');
-        let dragItem = null;
-        let isMoving = false;
-        let startX, startY;
-
-        grid.addEventListener('touchstart', (e) => {
-            const target = e.target.closest('.app-item');
-            if (target) {
-                dragItem = target;
-                isMoving = false;
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                
-                // Munting delay bago mag-activate ang dragging visual
-                setTimeout(() => {
-                    if(dragItem === target && !isMoving) dragItem.classList.add('dragging');
-                }, 200);
-            }
-        }, {passive: false});
-
-        grid.addEventListener('touchmove', (e) => {
-            if (!dragItem) return;
-            
-            const moveX = Math.abs(e.touches[0].clientX - startX);
-            const moveY = Math.abs(e.touches[0].clientY - startY);
-            
-            if (moveX > 10 || moveY > 10) {
-                isMoving = true;
-                e.preventDefault();
-                dragItem.classList.add('dragging');
-                
-                const touch = e.touches[0];
-                const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                const closest = target ? target.closest('.app-item') : null;
-
-                if (closest && closest !== dragItem) {
-                    const children = Array.from(grid.children);
-                    const dragIdx = children.indexOf(dragItem);
-                    const targetIdx = children.indexOf(closest);
-
-                    if (dragIdx < targetIdx) {
-                        grid.insertBefore(dragItem, closest.nextSibling);
-                    } else {
-                        grid.insertBefore(dragItem, closest);
-                    }
-                }
-            }
-        }, {passive: false});
-
-        grid.addEventListener('touchend', (e) => {
-            if (dragItem) {
-                // KUNG HINDI GUMALAW, ITREAT AS CLICK
-                if (!isMoving) {
-                    const url = dragItem.getAttribute('href');
-                    window.location.href = url;
-                }
-                dragItem.classList.remove('dragging');
-                dragItem = null;
-            }
-        });
+        // Tapo App Controls
+        function openTapo() { document.getElementById('tapoApp').style.display = 'flex'; }
+        function closeTapo() { document.getElementById('tapoApp').style.display = 'none'; }
 
         setInterval(updateClock, 1000);
         updateClock();
-        updateBattery();
     </script>
 </body>
 </html>
