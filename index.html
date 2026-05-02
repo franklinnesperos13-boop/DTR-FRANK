@@ -5,20 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frank S25 Ultra Pro</title>
     <style>
-        body { background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: "Segoe UI", Roboto, sans-serif; overflow: hidden; }
-        .phone-frame { width: 360px; height: 740px; background: #000; border: 4px solid #333; border-radius: 30px; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+        body { background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: "Segoe UI", Roboto, sans-serif; overflow: hidden; touch-action: none; }
+        .phone-frame { width: 360px; height: 740px; background: #000; border: 4px solid #333; border-radius: 35px; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
         .camera-hole { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #0a0a0a; border-radius: 50%; z-index: 100; }
         .screen { width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop'); background-size: cover; background-position: center; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
         .status-bar { width: 100%; display: flex; justify-content: space-between; padding: 12px 20px 0 20px; color: white; font-size: 13px; font-weight: 600; z-index: 50; box-sizing: border-box; }
-        .main-clock { margin-top: 60px; color: white; text-align: center; transition: transform 0.1s; display: block; text-decoration: none; width: 100%; }
+        
+        /* Clock Section */
+        .main-clock { margin-top: 60px; color: white; text-align: center; text-decoration: none; width: 100%; display: block; transition: 0.1s; }
         .main-clock:active { transform: scale(0.95); opacity: 0.8; }
         #big-time { font-size: 72px; font-weight: 200; margin: 0; letter-spacing: -2px; }
         #big-date { font-size: 16px; margin-top: -5px; opacity: 0.9; }
-        .app-grid { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: auto; margin-bottom: 50px; }
-        .app-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
-        .icon { width: 58px; height: 58px; border-radius: 20px; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-bottom: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.2s; }
-        .app-item:active .icon { transform: scale(0.85); }
-        .label { color: white; font-size: 11px; text-shadow: 1px 1px 3px #000; }
+
+        /* App Grid Section */
+        .app-grid { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: auto; margin-bottom: 50px; position: relative; }
+        .app-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; -webkit-tap-highlight-color: transparent; }
+        .icon { width: 58px; height: 58px; border-radius: 18px; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-bottom: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: none; }
+        .label { color: white; font-size: 11px; text-shadow: 1px 1px 3px #000; pointer-events: none; }
+        
+        /* Dragging Effect */
+        .dragging { opacity: 0.5; transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -36,7 +42,7 @@
                 <p id="big-date">Date Loading...</p>
             </a>
 
-            <div class="app-grid">
+            <div class="app-grid" id="appGrid">
                 <a href="dtr-app.html" class="app-item">
                     <div class="icon" style="background: white;">📅</div>
                     <span class="label">DTR</span>
@@ -44,6 +50,10 @@
                 <a href="solar-app.html" class="app-item">
                     <div class="icon" style="background: linear-gradient(135deg, #FF8C00, #FFD700);">☀️</div>
                     <span class="label">Solar</span>
+                </a>
+                <a href="tapo://" class="app-item">
+                    <div class="icon" style="background: linear-gradient(135deg, #00d2ff, #3a7bd5);">📹</div>
+                    <span class="label">Tapo</span>
                 </a>
                 <a href="messenger-app.html" class="app-item">
                     <div class="icon" style="background: linear-gradient(135deg, #00B2FF, #006AFF);">💬</div>
@@ -62,6 +72,7 @@
     </div>
 
     <script>
+        // 1. Clock & Battery logic
         function updateClock() {
             const now = new Date();
             const h = now.getHours().toString().padStart(2, '0');
@@ -72,13 +83,52 @@
             const options = { weekday: 'long', month: 'long', day: 'numeric' };
             document.getElementById('big-date').textContent = now.toLocaleDateString('en-PH', options);
         }
+
         async function updateBattery() {
             try {
                 const b = await navigator.getBattery();
                 document.getElementById('battery-level').textContent = Math.floor(b.level * 100) + "%";
-                b.onlevelchange = () => document.getElementById('battery-level').textContent = Math.floor(b.level * 100) + "%";
             } catch (e) { document.getElementById('battery-level').textContent = "100%"; }
         }
+
+        // 2. Drag and Drop logic
+        const grid = document.getElementById('appGrid');
+        let dragItem = null;
+
+        grid.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.app-item')) {
+                dragItem = e.target.closest('.app-item');
+                dragItem.classList.add('dragging');
+            }
+        }, {passive: false});
+
+        grid.addEventListener('touchmove', (e) => {
+            if (!dragItem) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            const closest = target ? target.closest('.app-item') : null;
+
+            if (closest && closest !== dragItem) {
+                const children = Array.from(grid.children);
+                const dragIdx = children.indexOf(dragItem);
+                const targetIdx = children.indexOf(closest);
+
+                if (dragIdx < targetIdx) {
+                    grid.insertBefore(dragItem, closest.nextSibling);
+                } else {
+                    grid.insertBefore(dragItem, closest);
+                }
+            }
+        }, {passive: false});
+
+        grid.addEventListener('touchend', () => {
+            if (dragItem) {
+                dragItem.classList.remove('dragging');
+                dragItem = null;
+            }
+        });
+
         setInterval(updateClock, 1000);
         updateClock();
         updateBattery();
