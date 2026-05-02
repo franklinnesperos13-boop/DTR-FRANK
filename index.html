@@ -5,125 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frank S25 Ultra</title>
     <style>
-        /* S25 Ultra Look */
-        body { 
-            background-color: #000; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        .phone-frame { 
-            width: 350px; 
-            height: 720px; 
-            background: #000; 
-            border: 4px solid #333; /* Thinner bezel gaya ng S25 Ultra */
-            border-radius: 20px; /* Mas kanto ng konti kesa sa iPhone */
-            position: relative; 
-            overflow: hidden; 
-            box-shadow: 0 0 30px rgba(255,255,255,0.1); 
-        }
-
-        /* Dynamic Wallpaper */
+        body { background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .phone-frame { width: 350px; height: 720px; background: #000; border: 4px solid #333; border-radius: 25px; position: relative; overflow: hidden; }
         .screen { 
-            width: 100%; 
-            height: 100%; 
+            width: 100%; height: 100%; 
             background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop'); 
-            background-size: cover;
-            background-position: center;
-            padding: 50px 20px; 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 20px; 
-            grid-auto-rows: min-content;
-            box-sizing: border-box;
+            background-size: cover; background-position: center;
+            padding: 60px 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; grid-auto-rows: min-content; box-sizing: border-box;
         }
-
-        /* One UI Icon Style */
-        .app-item { 
-            text-decoration: none; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            cursor: pointer; 
-        }
-
-        .icon { 
-            width: 60px; 
-            height: 60px; 
-            border-radius: 22px; /* Samsung Squircle shape */
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-size: 30px; 
-            margin-bottom: 6px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: transform 0.1s;
-        }
-
-        .app-item:active .icon { transform: scale(0.85); }
-
-        .label { 
-            color: white; 
-            font-size: 11px; 
-            text-align: center; 
-            font-weight: 400;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        }
-
-        /* Status Bar (Time) */
-        .status-bar {
-            position: absolute;
-            top: 10px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 25px;
-            box-sizing: border-box;
-            color: white;
-            font-size: 12px;
-            font-weight: 500;
-        }
+        .status-bar { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; color: white; font-size: 12px; z-index: 10; }
+        .app-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; }
+        .icon { width: 60px; height: 60px; border-radius: 20px; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-bottom: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.1s; }
+        .app-item:active .icon { transform: scale(0.9); }
+        .label { color: white; font-size: 11px; text-align: center; text-shadow: 1px 1px 2px #000; }
     </style>
 </head>
 <body>
-
     <div class="phone-frame">
-        <div class="status-bar">
-            <span>7:42</span>
-            <span>🔋 98%</span>
-        </div>
-
+        <div class="status-bar"><span>8:15</span><span>🔋 67%</span></div>
         <div class="screen">
+            
             <a href="dtr-app.html" class="app-item">
-                <div class="icon" style="background: #fff;">📅</div>
+                <div class="icon" style="background: white;">📅</div>
                 <span class="label">DTR Frank</span>
             </a>
 
-            <div class="app-item" onclick="alert('Samsung Messages: No new notifications')">
-                <div class="icon" style="background: #3b82f6;">💬</div>
-                <span class="label">Messages</span>
-            </div>
+            <a href="messenger-app.html" class="app-item">
+                <div class="icon" style="background: linear-gradient(135deg, #00B2FF, #006AFF);">💬</div>
+                <span class="label">Messenger</span>
+            </a>
 
-            <div class="app-item" onclick="alert('Settings: One UI 7.0 (Beta)')">
+            <a href="camera-app.html" class="app-item">
+                <div class="icon" style="background: #f0f0f0;">📷</div>
+                <span class="label">Camera</span>
+            </a>
+
+            <div class="app-item" onclick="alert('Settings Coming Soon!')">
                 <div class="icon" style="background: #8e8e93;">⚙️</div>
                 <span class="label">Settings</span>
             </div>
 
-            <div class="app-item" onclick="alert('Camera opening...')">
-                <div class="icon" style="background: #f3f4f6;">📷</div>
-                <span class="label">Camera</span>
-            </div>
-            
-            <div class="app-item" onclick="alert('Google Play Store: Search for more apps')">
-                <div class="icon" style="background: rgba(255,255,255,0.2); border: 1px dashed white;">➕</div>
-                <span class="label">Add App</span>
-            </div>
         </div>
     </div>
-
 </body>
 </html>
