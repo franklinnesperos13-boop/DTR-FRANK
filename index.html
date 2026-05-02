@@ -23,8 +23,7 @@
         .icon { width: 58px; height: 58px; border-radius: 18px; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-bottom: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: none; }
         .label { color: white; font-size: 11px; text-shadow: 1px 1px 3px #000; pointer-events: none; }
         
-        /* Dragging Effect */
-        .dragging { opacity: 0.5; transform: scale(1.1); }
+        .dragging { opacity: 0.5; transform: scale(1.1); z-index: 1000; }
     </style>
 </head>
 <body>
@@ -43,29 +42,25 @@
             </a>
 
             <div class="app-grid" id="appGrid">
-                <a href="dtr-app.html" class="app-item">
+                <a href="dtr-app.html" class="app-item" data-app="dtr">
                     <div class="icon" style="background: white;">📅</div>
                     <span class="label">DTR</span>
                 </a>
-                <a href="solar-app.html" class="app-item">
+                <a href="solar-app.html" class="app-item" data-app="solar">
                     <div class="icon" style="background: linear-gradient(135deg, #FF8C00, #FFD700);">☀️</div>
                     <span class="label">Solar</span>
                 </a>
-                <a href="tapo://" class="app-item">
-                    <div class="icon" style="background: linear-gradient(135deg, #00d2ff, #3a7bd5);">📹</div>
+                <a href="tapo://" class="app-item" data-app="tapo">
+                    <div class="icon" style="background: #00a0e9;">📹</div>
                     <span class="label">Tapo</span>
                 </a>
-                <a href="messenger-app.html" class="app-item">
+                <a href="messenger-app.html" class="app-item" data-app="chat">
                     <div class="icon" style="background: linear-gradient(135deg, #00B2FF, #006AFF);">💬</div>
                     <span class="label">Chat</span>
                 </a>
-                <a href="camera-app.html" class="app-item">
+                <a href="camera-app.html" class="app-item" data-app="camera">
                     <div class="icon" style="background: #f0f0f0;">📷</div>
                     <span class="label">Camera</span>
-                </a>
-                <a href="https://www.youtube.com" target="_blank" class="app-item">
-                    <div class="icon" style="background: white;">🛑</div>
-                    <span class="label">YouTube</span>
                 </a>
             </div>
         </div>
@@ -91,39 +86,63 @@
             } catch (e) { document.getElementById('battery-level').textContent = "100%"; }
         }
 
-        // 2. Drag and Drop logic
+        // 2. Drag & Drop with Click Support
         const grid = document.getElementById('appGrid');
         let dragItem = null;
+        let isMoving = false;
+        let startX, startY;
 
         grid.addEventListener('touchstart', (e) => {
-            if (e.target.closest('.app-item')) {
-                dragItem = e.target.closest('.app-item');
-                dragItem.classList.add('dragging');
+            const target = e.target.closest('.app-item');
+            if (target) {
+                dragItem = target;
+                isMoving = false;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                
+                // Munting delay bago mag-activate ang dragging visual
+                setTimeout(() => {
+                    if(dragItem === target && !isMoving) dragItem.classList.add('dragging');
+                }, 200);
             }
         }, {passive: false});
 
         grid.addEventListener('touchmove', (e) => {
             if (!dragItem) return;
-            e.preventDefault();
-            const touch = e.touches[0];
-            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            const closest = target ? target.closest('.app-item') : null;
+            
+            const moveX = Math.abs(e.touches[0].clientX - startX);
+            const moveY = Math.abs(e.touches[0].clientY - startY);
+            
+            if (moveX > 10 || moveY > 10) {
+                isMoving = true;
+                e.preventDefault();
+                dragItem.classList.add('dragging');
+                
+                const touch = e.touches[0];
+                const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                const closest = target ? target.closest('.app-item') : null;
 
-            if (closest && closest !== dragItem) {
-                const children = Array.from(grid.children);
-                const dragIdx = children.indexOf(dragItem);
-                const targetIdx = children.indexOf(closest);
+                if (closest && closest !== dragItem) {
+                    const children = Array.from(grid.children);
+                    const dragIdx = children.indexOf(dragItem);
+                    const targetIdx = children.indexOf(closest);
 
-                if (dragIdx < targetIdx) {
-                    grid.insertBefore(dragItem, closest.nextSibling);
-                } else {
-                    grid.insertBefore(dragItem, closest);
+                    if (dragIdx < targetIdx) {
+                        grid.insertBefore(dragItem, closest.nextSibling);
+                    } else {
+                        grid.insertBefore(dragItem, closest);
+                    }
                 }
             }
         }, {passive: false});
 
-        grid.addEventListener('touchend', () => {
+        grid.addEventListener('touchend', (e) => {
             if (dragItem) {
+                // KUNG HINDI GUMALAW, ITREAT AS CLICK
+                if (!isMoving) {
+                    const url = dragItem.getAttribute('href');
+                    window.location.href = url;
+                }
                 dragItem.classList.remove('dragging');
                 dragItem = null;
             }
