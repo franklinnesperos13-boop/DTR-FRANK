@@ -1,4 +1,140 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FrankOS - Mobile Portal</title>
+    <style>
+        /* Base Design */
+        body {
+            background-color: #121212;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Phone Container (Ang Frame) */
+        .phone-frame {
+            width: 360px;
+            height: 740px;
+            background: #000;
+            border: 12px solid #2c2c2c;
+            border-radius: 50px;
+            position: relative;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Notch sa taas */
+        .notch {
+            width: 150px;
+            height: 25px;
+            background: #2c2c2c;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            z-index: 10;
+        }
+
+        /* Screen Interface */
+        .screen {
+            flex: 1;
+            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 38px;
+            margin: 5px;
+            padding: 60px 20px 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: min-content;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        /* App Style */
+        .app-link {
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.1s;
+        }
+
+        .app-link:active {
+            transform: scale(0.9);
+        }
+
+        .icon {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 8px;
+        }
+
+        .label {
+            color: white;
+            font-size: 11px;
+            font-weight: 500;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* Bottom Bar (Buttons sa ilalim) */
+        .home-bar {
+            width: 120px;
+            height: 5px;
+            background: white;
+            border-radius: 10px;
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        <div class="notch"></div>
+        
+        <div class="screen">
+            
+            <a href="dtr-app.html" class="app-link">
+                <div class="icon" style="background: linear-gradient(135deg, #FF512F 0%, #DD2476 100%);">📅</div>
+                <span class="label">DTR Frank</span>
+            </a>
+
+            <div class="app-link" onclick="alert('Calculator coming soon!')">
+                <div class="icon" style="background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);">➕</div>
+                <span class="label">Calc</span>
+            </div>
+
+            <div class="app-link" onclick="alert('Settings coming soon!')">
+                <div class="icon" style="background: #7f8c8d;">⚙️</div>
+                <span class="label">Settings</span>
+            </div>
+
+        </div>
+
+        <div class="home-bar"></div>
+    </div>
+
+</body>
+</html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
