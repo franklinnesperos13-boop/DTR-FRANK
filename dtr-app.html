@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Time Sheet No. 1 - Franklin Nesperos</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 10px; color: #333; }
+        .sheet { background: white; padding: 15px; max-width: 950px; margin: auto; border: 1px solid #000; }
+        .header-title { text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; }
+        .info-section { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 0.8rem; font-weight: bold; }
+        .header-input { border: none; border-bottom: 1px solid #000; font-family: inherit; font-size: 0.8rem; font-weight: bold; width: 70%; padding: 0 5px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        th, td { border: 1px solid #000; padding: 4px; text-align: center; font-size: 10px; font-weight: bold; }
+        th { background: #f2f2f2; }
+        
+        .sunday-row { color: #ff0000; } 
+        .saturday-row { color: #008000; } 
+        .total-highlight { background-color: #e3f2fd !important; color: #0d47a1; font-weight: bold; }
+        .week-break-cell { padding-bottom: 25px !important; border-bottom: 3px solid #000 !important; }
+
+        input { width: 95%; border: none; text-align: center; font-family: inherit; background: transparent; font-size: 10px; color: inherit; }
+        .comment-input { text-align: left; width: 98%; }
+        .total-row { background: #fff9c4; color: #333; font-size: 11px; }
+        
+        /* Signature Styles */
+        .signature-section { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; font-size: 0.8rem; font-weight: bold; }
+        .sig-container { text-align: center; position: relative; }
+        canvas { border-bottom: 1px solid #000; width: 100%; height: 80px; cursor: crosshair; touch-action: none; background: #fafafa; }
+        .sig-label { margin-top: 5px; }
+        .clear-btn { font-size: 8px; color: red; cursor: pointer; text-decoration: underline; display: block; margin-top: 2px; }
+
+        .btn-container { margin-top: 15px; display: flex; gap: 10px; }
+        button { flex: 1; padding: 12px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; background: #007bff; color: white; }
+        @media print { .btn-container, .clear-btn { display: none; } .sheet { border: 1px solid #000; } canvas { background: transparent; } }
+    </style>
+</head>
+<body>
+
+<div class="sheet">
+    <div class="header-title">DAILY TIME SHEET No.1</div>
+
+    <div class="info-section">
+        <div>NAME: <input type="text" class="header-input" value="Franklin Nesperos"></div>
+        <div>PERIOD ENDING: <input type="date" id="periodEndDate" onchange="buildTable()" class="header-input" style="width: 130px;"></div>
+        <div>POSITION: <input type="text" class="header-input" value="Plasterer"></div>
+        <div>DATE: <input type="text" class="header-input" id="customDateDisplay"></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2" style="width: 15%;">DAY AND DATE</th>
+                <th colspan="2">TIME WORKED (12hr)</th>
+                <th rowspan="2">TOTAL HOURS</th>
+                <th rowspan="2">OVERTIME</th>
+                <th rowspan="2">MANAGERS SIGNATURE</th>
+                <th rowspan="2" style="width: 30%;">COMMENTS / SITE</th>
+            </tr>
+            <tr>
+                <th>START</th>
+                <th>FINISH</th>
+            </tr>
+        </thead>
+        <tbody id="sheetBody"></tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="3" style="text-align: right; padding-right: 10px; font-weight: bold;">GRAND TOTALS</td>
+                <td id="grandTotal" style="background: #bbdefb; font-weight: bold; border: 2px solid #000;">0.0</td>
+                <td id="overtimeTotal" style="background: #c8e6c9; font-weight: bold; border: 2px solid #000;">0.0</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="signature-section">
+        <div class="sig-container">
+            <canvas id="sig-employee"></canvas>
+            <div class="sig-label">EMPLOYEE</div>
+            <span class="clear-btn" onclick="clearSig('sig-employee')">[Clear Signature]</span>
+        </div>
+        <div class="sig-container">
+            <canvas id="sig-manager"></canvas>
+            <div class="sig-label">MANAGER</div>
+            <span class="clear-btn" onclick="clearSig('sig-manager')">[Clear Signature]</span>
+        </div>
+    </div>
+
+    <div class="btn-container">
+        <button onclick="window.print()">PRINT / SAVE AS PDF</button>
+    </div>
+</div>
+
+<script>
+    const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const tbody = document.getElementById('sheetBody');
+    
+    document.getElementById('periodEndDate').value = "2026-05-03";
+    const today = new Date();
+    document.getElementById('customDateDisplay').value = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
+
+    function buildTable() {
+        const periodEndVal = document.getElementById('periodEndDate').value;
+        if (!periodEndVal) return;
+
+        const endDate = new Date(periodEndVal);
+        const startDate = new Date(endDate);
+        startDate.setDate(endDate.getDate() - 13); 
+
+        tbody.innerHTML = "";
+        for (let i = 0; i < 14; i++) {
+            let currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + i);
+            let dateString = `${currentDate.getDate()} ${months[currentDate.getMonth()]}`;
+            let dayName = days[currentDate.getDay()];
+            let isWeekEnd = (i === 6); 
+
+            for (let layer = 0; layer < 3; layer++) {
+                let cellStyle = (isWeekEnd && layer === 2) ? "week-break-cell" : "";
+                let row = `<tr class="${dayName === "SUNDAY" ? "sunday-row" : (dayName === "SATURDAY" ? "saturday-row" : "")}">`;
+                
+                if (layer === 0) {
+                    row += `<td rowspan="3" class="${cellStyle}" style="text-align: left; background: #fafafa; color: inherit; font-weight: bold;">${dayName}<br>${dateString}</td>`;
+                }
+                
+                let defStart = (dayName !== "SUNDAY" && layer === 0) ? "07:00" : "";
+                let defEnd = (dayName !== "SUNDAY" && layer === 0) ? "17:00" : "";
+
+                row += `
+                    <td class="${cellStyle}"><input type="time" id="in-${i}-${layer}" value="${defStart}" onchange="calc()"></td>
+                    <td class="${cellStyle}"><input type="time" id="out-${i}-${layer}" value="${defEnd}" onchange="calc()"></td>
+                    <td id="sub-${i}-${layer}" class="total-highlight ${cellStyle}">0.0</td>
+                    <td class="${cellStyle}"><input type="number" id="ot-${i}-${layer}" step="0.5" value="0" onchange="calc()"></td>
+                    <td class="${cellStyle}"></td>
+                    <td class="comment-cell ${cellStyle}"><input type="text" class="comment-input" placeholder="..."></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            }
+        }
+        calc();
+    }
+
+    function calc() {
+        let grandTotal = 0;
+        let otTotal = 0;
+        for (let i = 0; i < 14; i++) {
+            for (let layer = 0; layer < 3; layer++) {
+                const tIn = document.getElementById(`in-${i}-${layer}`).value;
+                const tOut = document.getElementById(`out-${i}-${layer}`).value;
+                const otVal = parseFloat(document.getElementById(`ot-${i}-${layer}`).value) || 0;
+                if (tIn && tOut) {
+                    const start = tIn.split(':');
+                    const end = tOut.split(':');
+                    const startDateObj = new Date(0, 0, 0, start[0], start[1], 0);
+                    const endDateObj = new Date(0, 0, 0, end[0], end[1], 0);
+                    let diff = (endDateObj.getTime() - startDateObj.getTime()) / 1000 / 60 / 60;
+                    if (diff < 0) diff += 24;
+                    let dayHrs = diff > 0 ? (layer === 0 ? diff - 0.5 : diff) : 0;
+                    document.getElementById(`sub-${i}-${layer}`).innerText = dayHrs.toFixed(1);
+                    grandTotal += dayHrs;
+                } else {
+                    document.getElementById(`sub-${i}-${layer}`).innerText = "0.0";
+                }
+                otTotal += otVal;
+            }
+        }
+        document.getElementById('grandTotal').innerText = grandTotal.toFixed(1);
+        document.getElementById('overtimeTotal').innerText = otTotal.toFixed(1);
+    }
+
+    // Canvas Signature Logic
+    function initSig(id) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX || e.touches[0].clientX) - rect.left,
+                y: (e.clientY || e.touches[0].clientY) - rect.top
+            };
+        }
+
+        function start(e) { drawing = true; draw(e); }
+        function end() { drawing = false; ctx.beginPath(); }
+        function draw(e) {
+            if (!drawing) return;
+            const pos = getPos(e);
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = "#000";
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        canvas.addEventListener("mousedown", start);
+        canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("mouseup", end);
+        canvas.addEventListener("touchstart", (e) => { e.preventDefault(); start(e); });
+        canvas.addEventListener("touchmove", (e) => { e.preventDefault(); draw(e); });
+        canvas.addEventListener("touchend", end);
+    }
+
+    function clearSig(id) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    window.onload = () => {
+        buildTable();
+        initSig('sig-employee');
+        initSig('sig-manager');
+    };
+</script>
+
+</body>
+</html>
