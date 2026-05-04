@@ -3,137 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Frank S25 Ultra - DTR Master</title>
+    <title>Frank S25 Ultra - Smart DTR</title>
     <style>
         body { background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: "Segoe UI", sans-serif; overflow: hidden; touch-action: none; }
         .phone-frame { width: 360px; height: 740px; background: #000; border: 4px solid #333; border-radius: 35px; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
         .camera-hole { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #0a0a0a; border-radius: 50%; z-index: 5000; }
+        
         .screen { width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000'); background-size: cover; background-position: center; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; position: relative; }
         .status-bar { width: 100%; display: flex; justify-content: space-between; padding: 12px 20px; color: white; font-size: 13px; font-weight: 600; z-index: 500; position: absolute; top: 0; box-sizing: border-box; }
-        .main-clock { margin-top: 60px; color: white; text-align: center; width: 100%; }
+        .main-clock { margin-top: 60px; color: white; text-align: center; }
         #big-time { font-size: 72px; font-weight: 200; margin: 0; }
-        #big-date { font-size: 16px; margin-top: -5px; opacity: 0.9; }
 
-        /* App Grid */
-        .app-grid { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: auto; margin-bottom: 50px; }
+        /* App Icons */
+        .app-grid { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: auto; margin-bottom: 50px; z-index: 10; }
         .app-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-        .icon { width: 58px; height: 58px; border-radius: 18px; display: flex; justify-content: center; align-items: center; font-size: 30px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .icon { width: 58px; height: 58px; border-radius: 18px; display: flex; justify-content: center; align-items: center; font-size: 30px; background: white; }
         .label { color: white; font-size: 11px; margin-top: 5px; }
 
-        /* DTR Overlay */
-        .app-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 4000; display: none; flex-direction: column; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .app-header { background: #fff; padding: 45px 20px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; font-weight: bold; }
+        /* DTR OVERLAY */
+        .app-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 4000; display: none; flex-direction: column; }
+        .app-header { background: #fff; padding: 45px 20px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #007bff; font-weight: bold; }
+        .dtr-content { padding: 15px; flex: 1; overflow-y: auto; position: relative; }
 
-        .dtr-content { padding: 15px; flex: 1; overflow-y: auto; }
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        .btn-add { background: #28a745; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 15px; }
+        /* SMART AUTOCOMPLETE STYLING */
+        .autocomplete-container { position: relative; width: 100%; }
+        #siteIn { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .suggestions { position: absolute; top: 45px; left: 0; width: 100%; background: white; border: 1px solid #ddd; border-radius: 8px; z-index: 9999; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto; display: none; }
+        .suggestion-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; color: #333; }
+        .suggestion-item:hover { background: #f0f7ff; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 11px; background: white; }
+        input[type="text"]#commIn { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        .btn-sign { background: #007bff; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 15px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; background: white; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #007bff; color: white; }
-        .sig-img { width: 50px; height: auto; border: 1px solid #eee; }
+        .sig-cell img { width: 60px; height: auto; }
 
         /* SIGNATURE POPUP */
-        #sigPopup { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 6000; display: none; flex-direction: column; justify-content: center; align-items: center; }
-        .sig-pad-container { background: white; padding: 10px; border-radius: 15px; width: 90%; }
-        #sigCanvas { background: #fff; border: 2px dashed #ccc; border-radius: 10px; touch-action: none; }
-        .sig-controls { display: flex; justify-content: space-between; margin-top: 15px; gap: 10px; }
-        .sig-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; }
+        #sigPopup { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .sig-container { background: white; padding: 15px; border-radius: 20px; width: 90%; }
+        canvas { background: #fff; border: 2px dashed #007bff; border-radius: 10px; touch-action: none; width: 100%; }
+        .sig-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .s-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="phone-frame">
     <div class="camera-hole"></div>
-    <div class="status-bar"><span id="status-time">00:00</span><div>100% 🔋</div></div>
+    <div class="status-bar"><span id="st-time">00:00</span><div>100% 🔋</div></div>
 
     <div class="screen">
         <div class="main-clock"><h1 id="big-time">00:00</h1><p id="big-date">Loading...</p></div>
         <div class="app-grid">
-            <div class="app-item" onclick="openDTR()"><div class="icon">📝</div><span class="label">DTR</span></div>
+            <div class="app-item" onclick="openDTR()"><div class="icon">📅</div><span class="label">DTR</span></div>
         </div>
     </div>
 
     <div id="dtrOverlay" class="app-overlay">
-        <div class="app-header"><span>Daily Time Sheet</span><span onclick="closeApp()" style="cursor:pointer">✕</span></div>
+        <div class="app-header"><span>SMART DTR</span><span onclick="closeDTR()" style="cursor:pointer">✕</span></div>
         <div class="dtr-content">
-            <input type="text" id="siteInput" list="nz-sites" placeholder="Site Location (e.g. Chartwell)">
-            <datalist id="nz-sites">
-                <option value="Hamilton East, NZ"><option value="Chartwell, Hamilton"><option value="Rototuna, Hamilton"><option value="Te Rapa, NZ">
-            </datalist>
-            <input type="text" id="commentInput" placeholder="Comment/Work Done">
-            <button class="btn-add" onclick="openSig()">✍️ Sign & Add Entry</button>
+            <div class="autocomplete-container">
+                <input type="text" id="siteIn" placeholder="Type Address in Hamilton..." oninput="fetchAddresses(this.value)">
+                <div id="results" class="suggestions"></div>
+            </div>
+            
+            <input type="text" id="commIn" placeholder="Work Comment (e.g. GIB Stopping)">
+            <button class="btn-sign" onclick="showSigBox()">✍️ Sign & Add Record</button>
 
             <table id="dtrTable">
-                <thead><tr><th>Site</th><th>Comment</th><th>Sign</th></tr></thead>
+                <thead><tr><th>Address (Map)</th><th>Comment</th><th>Sign</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
     </div>
 
     <div id="sigPopup">
-        <div class="sig-pad-container">
-            <p style="color: #333; text-align:center; font-weight:bold;">Sign with your finger</p>
+        <div class="sig-container">
+            <h3 style="margin-top:0; color:#333; text-align:center;">Digital Signature</h3>
             <canvas id="sigCanvas"></canvas>
-            <div class="sig-controls">
-                <button class="sig-btn" style="background:#eee;" onclick="clearSig()">Clear</button>
-                <button class="sig-btn" style="background:#28a745; color:white;" onclick="saveSig()">Save & Add</button>
+            <div class="sig-btns">
+                <button class="s-btn" style="background:#ddd;" onclick="clearCanvas()">Clear</button>
+                <button class="s-btn" style="background:#28a745; color:white;" onclick="saveEntry()">Save</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // 1. Time Logic
     function updateClock() {
         const now = new Date();
-        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-        document.getElementById('status-time').textContent = timeStr;
-        document.getElementById('big-time').textContent = timeStr;
+        const t = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        document.getElementById('st-time').textContent = t;
+        document.getElementById('big-time').textContent = t;
         document.getElementById('big-date').textContent = now.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' });
     }
     setInterval(updateClock, 1000); updateClock();
 
     function openDTR() { document.getElementById('dtrOverlay').style.display = 'flex'; }
-    function closeApp() { document.getElementById('dtrOverlay').style.display = 'none'; }
+    function closeDTR() { document.getElementById('dtrOverlay').style.display = 'none'; }
 
-    // --- SIGNATURE LOGIC ---
+    // 2. SMART ADDRESS AUTOCOMPLETE (OpenStreetMap Nominatim)
+    async function fetchAddresses(query) {
+        const resultsBox = document.getElementById('results');
+        if (query.length < 3) { resultsBox.style.display = 'none'; return; }
+
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query},+Hamilton,+New+Zealand&addressdetails=1&limit=5`);
+            const data = await response.json();
+            
+            resultsBox.innerHTML = "";
+            if (data.length > 0) {
+                resultsBox.style.display = 'block';
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = item.display_name.split(', New Zealand')[0];
+                    div.onclick = () => {
+                        document.getElementById('siteIn').value = div.textContent;
+                        resultsBox.style.display = 'none';
+                    };
+                    resultsBox.appendChild(div);
+                });
+            } else { resultsBox.style.display = 'none'; }
+        } catch (error) { console.log("Autocomplete error"); }
+    }
+
+    // 3. Signature Logic
     const canvas = document.getElementById('sigCanvas');
     const ctx = canvas.getContext('2d');
     let drawing = false;
 
-    function openSig() {
-        if(!document.getElementById('siteInput').value) return alert("Type the Site first!");
+    function showSigBox() {
+        if(!document.getElementById('siteIn').value) return alert("Paki-type yung Address!");
         document.getElementById('sigPopup').style.display = 'flex';
-        canvas.width = canvas.parentElement.offsetWidth - 20;
-        canvas.height = 200;
-        ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
+        canvas.width = canvas.parentElement.offsetWidth - 30;
+        canvas.height = 250;
+        ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.lineCap = "round";
     }
 
-    canvas.addEventListener('touchstart', (e) => { drawing = true; const r = canvas.getBoundingClientRect(); ctx.beginPath(); ctx.moveTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top); e.preventDefault(); });
-    canvas.addEventListener('touchmove', (e) => { if(!drawing) return; const r = canvas.getBoundingClientRect(); ctx.lineTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top); ctx.stroke(); e.preventDefault(); });
-    canvas.addEventListener('touchend', () => { drawing = false; });
+    canvas.addEventListener('touchstart', (e) => {
+        drawing = true;
+        const r = canvas.getBoundingClientRect();
+        ctx.beginPath();
+        ctx.moveTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
+        e.preventDefault();
+    });
+    canvas.addEventListener('touchmove', (e) => {
+        if(!drawing) return;
+        const r = canvas.getBoundingClientRect();
+        ctx.lineTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
+        ctx.stroke();
+        e.preventDefault();
+    });
+    canvas.addEventListener('touchend', () => drawing = false);
 
-    function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-    function saveSig() {
-        const site = document.getElementById('siteInput').value;
-        const comment = document.getElementById('commentInput').value;
-        const sigData = canvas.toDataURL(); // Image data
+    function saveEntry() {
+        const site = document.getElementById('siteIn').value;
+        const comm = document.getElementById('commIn').value;
+        const sig = canvas.toDataURL();
 
-        const table = document.getElementById('dtrTable').getElementsByTagName('tbody')[0];
-        const row = table.insertRow(0);
-        const mapUrl = "http://googleusercontent.com/maps.google.com/6" + encodeURIComponent(site + ", NZ");
+        const tbody = document.querySelector('#dtrTable tbody');
+        const row = tbody.insertRow(0);
+        const mapUrl = "https://www.google.com/maps/search/" + encodeURIComponent(site);
 
         row.innerHTML = `
-            <td><a href="${mapUrl}" target="_blank" style="color:#007bff;font-weight:bold;">${site}</a></td>
-            <td>${comment}</td>
-            <td><img src="${sigData}" class="sig-img"></td>
+            <td><a href="${mapUrl}" target="_blank" style="color:#007bff; font-weight:bold;">${site}</a></td>
+            <td>${comm}</td>
+            <td class="sig-cell"><img src="${sig}"></td>
         `;
 
         document.getElementById('sigPopup').style.display = 'none';
-        clearSig();
-        document.getElementById('siteInput').value = ""; document.getElementById('commentInput').value = "";
+        clearCanvas();
+        document.getElementById('siteIn').value = "";
+        document.getElementById('commIn').value = "";
     }
 </script>
 
