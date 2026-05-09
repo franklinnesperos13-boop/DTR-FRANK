@@ -3,34 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional DTR - Franklin</title>
+    <title>DTR System - Hamilton</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 10px; font-size: 12px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-top: 10px solid #c0392b; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 10px; font-size: 13px; }
+        .container { max-width: 950px; margin: auto; background: white; padding: 25px; border-top: 10px solid #c0392b; border-radius: 8px; position: relative; }
         
-        .header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .input-group { display: flex; flex-direction: column; }
-        .input-group label { font-weight: bold; color: #666; margin-bottom: 5px; }
-        .input-group input, .input-group select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .field { display: flex; flex-direction: column; }
+        .field label { font-weight: bold; color: #555; margin-bottom: 4px; font-size: 11px; }
+        select, input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #f8f8f8; padding: 10px; border: 1px solid #ddd; }
-        td { border: 1px solid #ddd; padding: 5px; text-align: center; }
+        th { background: #f4f4f4; border: 1px solid #ddd; padding: 10px; font-size: 11px; }
+        td { border: 1px solid #ddd; padding: 4px; text-align: center; }
         
-        /* Space sa pagitan ng Sunday at Monday */
-        .week-separator { height: 25px; background-color: #f4f4f4; border: none; }
+        .week-spacer { height: 25px; background: #eee; border: none; }
+        .time-select { width: 100%; border: none; background: transparent; font-size: 12px; }
+        
+        .signature-section { margin-top: 20px; display: flex; align-items: center; gap: 10px; }
+        #sig-image { border-bottom: 1px solid #000; width: 200px; height: 60px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #fafafa; }
 
-        select.time-select { width: 100%; border: none; background: transparent; cursor: pointer; }
-        input.text-input { width: 95%; border: none; text-align: left; }
+        /* Signature Modal */
+        #sig-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; text-align: center; }
+        canvas { border: 1px solid #000; background: #fff; cursor: crosshair; }
         
-        .no-print-section { text-align: center; margin-top: 20px; }
-        .btn-save { background: #c0392b; color: white; border: none; padding: 12px 30px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .buttons { margin-top: 25px; text-align: center; display: flex; justify-content: center; gap: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-save { background: #27ae60; color: white; }
+        .btn-print { background: #c0392b; color: white; }
+        .btn-clear { background: #7f8c8d; color: white; }
 
         @media print {
-            @page { size: portrait; margin: 10mm; }
-            .no-print-section { display: none; }
-            .container { border: none; width: 100%; }
-            select { -webkit-appearance: none; -moz-appearance: none; appearance: none; border: none; }
+            .no-print, .btn, #sig-modal { display: none !important; }
+            .container { border: none; width: 100%; box-shadow: none; }
+            select { -webkit-appearance: none; appearance: none; border: none; }
         }
     </style>
 </head>
@@ -38,98 +45,181 @@
 
 <div class="container">
     <div class="header-grid">
-        <div class="input-group">
+        <div class="field">
             <label>NAME:</label>
-            <select id="name-select" onchange="checkOther(this)">
-                <option value="Franklin Nesperos">Franklin Nesperos</option>
-                <option value="John Doe">John Doe</option>
-                <option value="Jane Smith">Jane Smith</option>
-                <option value="Other">Type Other...</option>
+            <select id="userName" onchange="saveData()">
+                <option value="FRANKLIN NESPEROS">FRANKLIN NESPEROS</option>
+                <option value="ELMER CABAÑA">ELMER CABAÑA</option>
+                <option value="LARRY LABRADOR">LARRY LABRADOR</option>
             </select>
-            <input type="text" id="custom-name" style="display:none; margin-top:5px;" placeholder="Enter Name">
         </div>
-        <div class="input-group">
-            <label>DATE (START):</label>
-            <input type="date">
+        <div class="field">
+            <label>DATE START:</label>
+            <input type="date" id="dateStart" onchange="updateDates()">
         </div>
-        <div class="input-group">
+        <div class="field">
             <label>POSITION:</label>
-            <input type="text" value="Plasterer">
+            <input type="text" value="Plasterer" readonly>
         </div>
-        <div class="input-group">
-            <label>PERIOD ENDING:</label>
-            <input type="date">
+        <div class="field">
+            <label>PERIOD ENDING (14 DAYS):</label>
+            <input type="text" id="dateEnd" readonly>
         </div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th width="15%">DAY AND DATE</th>
-                <th width="12%">START</th>
-                <th width="12%">FINISH</th>
+                <th width="18%">DAY & DATE</th>
+                <th width="15%">START</th>
+                <th width="15%">FINISH</th>
                 <th width="8%">NO BREAK</th>
                 <th width="10%">TOTAL</th>
                 <th>SITE / COMMENTS</th>
             </tr>
         </thead>
-        <tbody id="dtr-table">
-            <!-- Script will generate rows -->
-        </tbody>
+        <tbody id="dtrBody"></tbody>
     </table>
 
-    <div class="no-print-section">
-        <button class="btn-save" onclick="window.print()">SAVE AS PDF</button>
+    <div class="signature-section">
+        <label>SIGNATURE:</label>
+        <div id="sig-image" onclick="openSig()">Click to Sign</div>
+    </div>
+
+    <div class="buttons no-print">
+        <button class="btn btn-save" onclick="saveData()">SAVE PROGRESS</button>
+        <button class="btn btn-print" onclick="window.print()">PRINT TO PDF</button>
+    </div>
+</div>
+
+<div id="sig-modal">
+    <div class="modal-content">
+        <h3>Digital Signature</h3>
+        <canvas id="sig-canvas" width="400" height="200"></canvas><br><br>
+        <button class="btn btn-clear" onclick="clearSig()">Clear</button>
+        <button class="btn btn-save" onclick="saveSig()">Confirm Signature</button>
+        <button class="btn btn-clear" style="background:#e74c3c" onclick="closeSig()">Close</button>
     </div>
 </div>
 
 <script>
-    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const tableBody = document.getElementById('dtr-table');
+    const dtrBody = document.getElementById('dtrBody');
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
     function createTimeOptions() {
         let options = '<option value="">--:--</option>';
-        for(let h=0; h<24; h++) {
-            for(let m=0; m<60; m+=30) {
-                let hh = h < 10 ? '0'+h : h;
-                let mm = m < 10 ? '0'+m : m;
-                options += `<option value="${hh}:${mm}">${hh}:${mm}</option>`;
+        const periods = ["AM", "PM"];
+        for (let p of periods) {
+            for (let h = 1; h <= 12; h++) {
+                for (let m of ["00", "30"]) {
+                    let time = `${h}:${m} ${p}`;
+                    options += `<option value="${time}">${time}</option>`;
+                }
             }
         }
         return options;
     }
 
-    const timeOptions = createTimeOptions();
-
-    for (let i = 0; i < 14; i++) {
-        // Add separator after the first Sunday (7th row)
-        if (i === 7) {
-            let separator = `<tr class="week-separator"><td colspan="6"></td></tr>`;
-            tableBody.insertAdjacentHTML('beforeend', separator);
+    function initTable() {
+        dtrBody.innerHTML = "";
+        const timeOptions = createTimeOptions();
+        for (let i = 0; i < 14; i++) {
+            if (i === 7) {
+                dtrBody.innerHTML += `<tr class="week-spacer"><td colspan="6"></td></tr>`;
+            }
+            dtrBody.innerHTML += `
+                <tr>
+                    <td id="day-date-${i}">${days[i % 7]}</td>
+                    <td><select class="time-select" id="start-${i}" onchange="saveData()">${timeOptions}</select></td>
+                    <td><select class="time-select" id="finish-${i}" onchange="saveData()">${timeOptions}</select></td>
+                    <td><input type="checkbox" id="break-${i}" onchange="saveData()"></td>
+                    <td id="total-${i}">0.0</td>
+                    <td><input type="text" style="width:90%;border:none;" id="site-${i}" placeholder="Search address..." onchange="saveData()"></td>
+                </tr>
+            `;
         }
-
-        let dayName = days[i % 7];
-        let row = `
-            <tr>
-                <td><input type="text" class="text-input" value="${dayName}"></td>
-                <td><select class="time-select">${timeOptions}</select></td>
-                <td><select class="time-select">${timeOptions}</select></td>
-                <td><input type="checkbox"></td>
-                <td style="font-weight:bold;">0.0</td>
-                <td><input type="text" class="text-input" placeholder="..."></td>
-            </tr>
-        `;
-        tableBody.insertAdjacentHTML('beforeend', row);
+        loadSavedData();
     }
 
-    function checkOther(select) {
-        const customInput = document.getElementById('custom-name');
-        if(select.value === "Other") {
-            customInput.style.display = "block";
-        } else {
-            customInput.style.display = "none";
+    function updateDates() {
+        const startVal = document.getElementById('dateStart').value;
+        if (!startVal) return;
+        
+        let startDate = new Date(startVal);
+        let endDate = new Date(startVal);
+        endDate.setDate(startDate.getDate() + 13);
+        document.getElementById('dateEnd').value = endDate.toDateString();
+
+        for (let i = 0; i < 14; i++) {
+            let current = new Date(startVal);
+            current.setDate(startDate.getDate() + i);
+            const dayName = days[current.getDay() === 0 ? 6 : current.getDay() - 1];
+            document.getElementById(`day-date-${i}`).innerText = `${dayName} ${current.getDate()}`;
+        }
+        saveData();
+    }
+
+    function saveData() {
+        const data = {
+            name: document.getElementById('userName').value,
+            start: document.getElementById('dateStart').value,
+            rows: []
+        };
+        for (let i = 0; i < 14; i++) {
+            data.rows.push({
+                start: document.getElementById(`start-${i}`).value,
+                finish: document.getElementById(`finish-${i}`).value,
+                break: document.getElementById(`break-${i}`).checked,
+                site: document.getElementById(`site-${i}`).value
+            });
+        }
+        localStorage.setItem('f_dtr_data', JSON.stringify(data));
+    }
+
+    function loadSavedData() {
+        const saved = localStorage.getItem('f_dtr_data');
+        if (saved) {
+            const data = JSON.parse(saved);
+            document.getElementById('userName').value = data.name;
+            document.getElementById('dateStart').value = data.start;
+            updateDates();
+            data.rows.forEach((row, i) => {
+                document.getElementById(`start-${i}`).value = row.start;
+                document.getElementById(`finish-${i}`).value = row.finish;
+                document.getElementById(`break-${i}`).checked = row.break;
+                document.getElementById(`site-${i}`).value = row.site;
+            });
         }
     }
+
+    // Signature Logic
+    const canvas = document.getElementById('sig-canvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function openSig() { document.getElementById('sig-modal').style.display = 'flex'; }
+    function closeSig() { document.getElementById('sig-modal').style.display = 'none'; }
+    function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+    canvas.onmousedown = () => drawing = true;
+    window.onmouseup = () => drawing = false;
+    canvas.onmousemove = (e) => {
+        if (!drawing) return;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+    };
+
+    function saveSig() {
+        const dataUrl = canvas.toDataURL();
+        document.getElementById('sig-image').innerHTML = `<img src="${dataUrl}" style="height:100%">`;
+        closeSig();
+    }
+
+    initTable();
 </script>
 
 </body>
