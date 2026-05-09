@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JP INTERIORS LIMITED - DTR</title>
     <style>
-        :root { --dark-blue: #001f3f; --sat-blue: #e3f2fd; --sun-red: #ffebee; }
+        :root { --dark-blue: #001f3f; --sat-blue: #e3f2fd; --sun-red: #ffebee; --green: #27ae60; --gray: #7f8c8d; --red: #e74c3c; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; padding: 10px; margin: 0; }
         .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         
@@ -17,38 +17,42 @@
         .field { display: flex; flex-direction: column; }
         .field label { font-weight: bold; font-size: 11px; color: #666; margin-bottom: 3px; }
         select, input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
-        th { background: var(--dark-blue); color: white; border: 1px solid #ddd; padding: 8px; font-size: 11px; }
-        td { border: 1px solid #ddd; padding: 2px; text-align: center; }
         
-        /* Highlights */
+        /* Locked State */
+        .locked select, .locked input { background: #f9f9f9; pointer-events: none; border-color: transparent; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: var(--dark-blue); color: white; border: 1px solid #ddd; padding: 8px; font-size: 11px; }
+        td { border: 1px solid #ddd; padding: 4px; text-align: center; }
+        
         .sat-row { background-color: var(--sat-blue) !important; }
         .sun-row { background-color: var(--sun-red) !important; }
-        .week-spacer { height: 20px; background: #eee; }
+        .week-spacer { height: 25px; background: #eee; }
 
         .time-select { width: 100%; border: none; background: transparent; font-size: 12px; height: 30px; }
         input.site-input { width: 95%; border: none; background: transparent; font-size: 12px; text-align: left; }
 
-        /* Signature Modal */
-        #sig-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center; touch-action: none; }
+        #sig-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center; }
         .modal-content { background:white; padding:20px; border-radius:10px; width: 90%; max-width: 500px; text-align:center; }
-        #sig-canvas { border: 2px dashed #000; background:#fff; touch-action: none; width: 100%; max-width: 400px; height: 200px; }
+        #sig-canvas { border: 2px dashed #000; background:#fff; width: 100%; height: 200px; touch-action: none; }
 
-        .buttons { margin-top: 20px; display: flex; justify-content: center; gap: 10px; }
-        .btn { padding: 12px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; }
-        .btn-save { background: #27ae60; }
+        .button-bar { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .left-btns, .right-btns { display: flex; gap: 10px; }
+        
+        .btn { padding: 12px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; min-width: 100px; }
+        .btn-edit { background: var(--gray); }
+        .btn-save { background: var(--green); }
         .btn-print { background: var(--dark-blue); }
-        .btn-clear { background: #7f8c8d; }
+        .btn-clear { background: var(--red); }
 
         @media print {
-            .no-print, .btn, #sig-modal { display: none !important; }
+            .no-print, .btn, #sig-modal, .button-bar { display: none !important; }
             .container { box-shadow: none; padding: 0; }
             select { -webkit-appearance: none; appearance: none; border: none; }
         }
     </style>
 </head>
-<body>
+<body class="locked" id="mainBody">
 
 <div class="container">
     <div class="branding">
@@ -59,13 +63,13 @@
     <div class="header-grid">
         <div class="field">
             <label>NAME:</label>
-            <select id="userName" onchange="saveAll()">
+            <select id="userName">
                 <option value="FRANKLIN NESPEROS">FRANKLIN NESPEROS</option>
                 <option value="ELMER CABAÑA">ELMER CABAÑA</option>
                 <option value="LARRY LABRADOR">LARRY LABRADOR</option>
             </select>
         </div>
-        <div class="field"><label>DATE START:</label><input type="date" id="dateStart" onchange="updateTable()"></div>
+        <div class="field"><label>DATE START:</label><input type="date" id="dateStart" onchange="generateTable()"></div>
         <div class="field"><label>POSITION:</label><input type="text" value="Plasterer" readonly></div>
         <div class="field"><label>PERIOD ENDING:</label><input type="text" id="dateEnd" readonly></div>
     </div>
@@ -78,7 +82,7 @@
                 <th width="15%">FINISH</th>
                 <th width="10%">NO BREAK</th>
                 <th width="10%">TOTAL</th>
-                <th>SITE / COMMENTS</th>
+                <th>SITE / COMMENTS (NZ Address)</th>
             </tr>
         </thead>
         <tbody id="dtrBody"></tbody>
@@ -91,15 +95,21 @@
         </div>
     </div>
 
-    <div class="buttons no-print">
-        <button class="btn btn-save" onclick="saveAll()">SAVE DATA</button>
-        <button class="btn btn-print" onclick="window.print()">PRINT PDF</button>
+    <div class="button-bar no-print">
+        <div class="left-btns">
+            <button class="btn btn-edit" id="editBtn" onclick="toggleEdit(true)">EDIT</button>
+            <button class="btn btn-save" id="saveBtn" onclick="toggleEdit(false)" style="display:none;">SAVE</button>
+        </div>
+        <div class="right-btns">
+            <button class="btn btn-print" onclick="window.print()">PRINT PDF</button>
+            <button class="btn btn-clear" onclick="clearAllData()">CLEAR ALL</button>
+        </div>
     </div>
 </div>
 
 <div id="sig-modal">
     <div class="modal-content">
-        <h3>Sign with your finger</h3>
+        <h3>Sign Here</h3>
         <canvas id="sig-canvas"></canvas><br><br>
         <button class="btn btn-clear" onclick="clearSig()">Clear</button>
         <button class="btn btn-save" onclick="saveSig()">Confirm</button>
@@ -107,9 +117,28 @@
     </div>
 </div>
 
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=places"></script>
+
 <script>
     const dtrBody = document.getElementById('dtrBody');
     const daysArr = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+    function toggleEdit(isEditing) {
+        const body = document.getElementById('mainBody');
+        const editBtn = document.getElementById('editBtn');
+        const saveBtn = document.getElementById('saveBtn');
+
+        if (isEditing) {
+            body.classList.remove('locked');
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'block';
+        } else {
+            body.classList.add('locked');
+            editBtn.style.display = 'block';
+            saveBtn.style.display = 'none';
+            saveToStorage();
+        }
+    }
 
     function createTimeOptions() {
         let options = '<option value="">--:--</option>';
@@ -124,7 +153,7 @@
         return options;
     }
 
-    function updateTable() {
+    function generateTable() {
         const start = document.getElementById('dateStart').value;
         if (!start) return;
         
@@ -144,57 +173,62 @@
             let dayName = daysArr[curr.getDay() === 0 ? 6 : curr.getDay() - 1];
             let rowClass = dayName === "Saturday" ? "sat-row" : (dayName === "Sunday" ? "sun-row" : "");
 
-            // Tatlong Row kada araw
             for (let r = 0; r < 3; r++) {
+                const rowId = `row-${i}-${r}`;
                 dtrBody.innerHTML += `
                     <tr class="${rowClass}">
-                        <td>${r === 0 ? `<b>${dayName} ${curr.getDate()}</b>` : ""}</td>
+                        <td style="font-size:10px;">${r === 0 ? `<b>${dayName} ${curr.getDate()}</b>` : ""}</td>
                         <td><select class="time-select" id="s-${i}-${r}">${timeOpts}</select></td>
                         <td><select class="time-select" id="f-${i}-${r}">${timeOpts}</select></td>
                         <td><input type="checkbox" id="b-${i}-${r}"></td>
                         <td id="t-${i}-${r}">0.0</td>
-                        <td><input type="text" class="site-input" id="site-${i}-${r}" placeholder="..."></td>
+                        <td><input type="text" class="site-input" id="site-${i}-${r}" placeholder="Type NZ Address..."></td>
                     </tr>
                 `;
+                // Add Autocomplete to each input
+                setTimeout(() => initAutocomplete(`site-${i}-${r}`), 100);
             }
         }
-        loadAll();
+        loadFromStorage();
     }
 
-    // Signature Logic (With Touch Support)
+    // Google Maps Autocomplete (Restricted to NZ)
+    function initAutocomplete(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        const autocomplete = new google.maps.places.Autocomplete(input, {
+            componentRestrictions: { country: "nz" },
+            fields: ["address_components", "geometry", "name"],
+            types: ["address"]
+        });
+    }
+
+    // Signature Logic
     const canvas = document.getElementById('sig-canvas');
     const ctx = canvas.getContext('2d');
     let drawing = false;
 
-    function openSig() { document.getElementById('sig-modal').style.display = 'flex'; resizeCanvas(); }
+    function openSig() { if(document.getElementById('mainBody').classList.contains('locked')) return; document.getElementById('sig-modal').style.display = 'flex'; canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     function closeSig() { document.getElementById('sig-modal').style.display = 'none'; }
     function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-    function resizeCanvas() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-    }
-
-    function getPos(e) {
+    const getPos = (e) => {
         let rect = canvas.getBoundingClientRect();
         let clientX = e.touches ? e.touches[0].clientX : e.clientX;
         let clientY = e.touches ? e.touches[0].clientY : e.clientY;
         return { x: clientX - rect.left, y: clientY - rect.top };
-    }
+    };
 
-    function startDraw(e) { drawing = true; draw(e); }
-    function stopDraw() { drawing = false; ctx.beginPath(); }
-    function draw(e) {
+    const startDraw = (e) => { drawing = true; draw(e); };
+    const stopDraw = () => { drawing = false; ctx.beginPath(); };
+    const draw = (e) => {
         if (!drawing) return;
         e.preventDefault();
         let pos = getPos(e);
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineTo(pos.x, pos.y);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(pos.x, pos.y);
-    }
+        ctx.lineWidth = 2; ctx.lineCap = 'round';
+        ctx.lineTo(pos.x, pos.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
+    };
 
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mousemove', draw);
@@ -208,34 +242,35 @@
         closeSig();
     }
 
-    function saveAll() {
+    function saveToStorage() {
         const data = { name: document.getElementById('userName').value, start: document.getElementById('dateStart').value, rows: [] };
         for(let i=0; i<14; i++){
             for(let r=0; r<3; r++){
-                data.rows.push({
-                    s: document.getElementById(`s-${i}-${r}`).value,
-                    f: document.getElementById(`f-${i}-${r}`).value,
-                    b: document.getElementById(`b-${i}-${r}`).checked,
-                    site: document.getElementById(`site-${i}-${r}`).value
-                });
+                const s = document.getElementById(`s-${i}-${r}`);
+                const f = document.getElementById(`f-${i}-${r}`);
+                const b = document.getElementById(`b-${i}-${r}`);
+                const site = document.getElementById(`site-${i}-${r}`);
+                if(s) data.rows.push({ s: s.value, f: f.value, b: b.checked, site: site.value });
             }
         }
-        localStorage.setItem('jp_dtr_v2', JSON.stringify(data));
+        localStorage.setItem('jp_dtr_final_v1', JSON.stringify(data));
+        alert("Data Saved Successfully!");
     }
 
-    function loadAll() {
-        const saved = localStorage.getItem('jp_dtr_v2');
+    function loadFromStorage() {
+        const saved = localStorage.getItem('jp_dtr_final_v1');
         if (saved) {
             const data = JSON.parse(saved);
             document.getElementById('userName').value = data.name;
             let idx = 0;
             for(let i=0; i<14; i++){
                 for(let r=0; r<3; r++){
-                    if(data.rows[idx]){
-                        document.getElementById(`s-${i}-${r}`).value = data.rows[idx].s;
-                        document.getElementById(`f-${i}-${r}`).value = data.rows[idx].f;
-                        document.getElementById(`b-${i}-${r}`).checked = data.rows[idx].b;
-                        document.getElementById(`site-${i}-${r}`).value = data.rows[idx].site;
+                    const row = data.rows[idx];
+                    if(row){
+                        document.getElementById(`s-${i}-${r}`).value = row.s;
+                        document.getElementById(`f-${i}-${r}`).value = row.f;
+                        document.getElementById(`b-${i}-${r}`).checked = row.b;
+                        document.getElementById(`site-${i}-${r}`).value = row.site;
                     }
                     idx++;
                 }
@@ -243,7 +278,14 @@
         }
     }
 
-    updateTable();
+    function clearAllData() {
+        if(confirm("Burahin lahat ng data?")) {
+            localStorage.removeItem('jp_dtr_final_v1');
+            location.reload();
+        }
+    }
+
+    window.onload = generateTable;
 </script>
 
 </body>
