@@ -7,7 +7,7 @@
     <style>
         :root { --dark-blue: #001f3f; --sat-blue: #e3f2fd; --sun-red: #ffebee; --green: #27ae60; --gray: #7f8c8d; --red: #e74c3c; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; padding: 10px; margin: 0; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .container { max-width: 1050px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         
         .branding { text-align: center; margin-bottom: 20px; }
         .branding h1 { color: var(--dark-blue); margin: 0; font-size: 28px; text-transform: uppercase; }
@@ -18,7 +18,6 @@
         .field label { font-weight: bold; font-size: 11px; color: #666; margin-bottom: 3px; }
         select, input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         
-        /* Locked State */
         .locked select, .locked input { background: #f9f9f9; pointer-events: none; border-color: transparent; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -29,36 +28,33 @@
         .sun-row { background-color: var(--sun-red) !important; }
         .week-spacer { height: 25px; background: #eee; }
 
-        .time-select { width: 100%; border: none; background: transparent; font-size: 12px; height: 30px; }
-        input.site-input { width: 95%; border: none; background: transparent; font-size: 12px; text-align: left; }
+        .time-select { width: 100%; border: none; background: transparent; font-size: 13px; font-weight: bold; height: 35px; }
+        input.site-input { width: 95%; border: none; background: transparent; font-size: 12px; }
 
-        #sig-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center; }
-        .modal-content { background:white; padding:20px; border-radius:10px; width: 90%; max-width: 500px; text-align:center; }
-        #sig-canvas { border: 2px dashed #000; background:#fff; width: 100%; height: 200px; touch-action: none; }
+        /* Address Suggestions Styling */
+        .address-container { position: relative; width: 100%; }
+        .suggestions { position: absolute; background: white; border: 1px solid #ccc; width: 100%; z-index: 1000; text-align: left; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-height: 150px; overflow-y: auto; display: none; }
+        .suggestions div { padding: 8px; cursor: pointer; font-size: 11px; border-bottom: 1px solid #eee; }
+        .suggestions div:hover { background: #f0f0f0; }
 
-        .button-bar { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .left-btns, .right-btns { display: flex; gap: 10px; }
-        
+        .button-bar { margin-top: 30px; display: flex; justify-content: space-between; gap: 10px; }
         .btn { padding: 12px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; min-width: 100px; }
         .btn-edit { background: var(--gray); }
         .btn-save { background: var(--green); }
         .btn-print { background: var(--dark-blue); }
         .btn-clear { background: var(--red); }
 
-        @media print {
-            .no-print, .btn, #sig-modal, .button-bar { display: none !important; }
-            .container { box-shadow: none; padding: 0; }
-            select { -webkit-appearance: none; appearance: none; border: none; }
-        }
+        #sig-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center; }
+        .modal-content { background:white; padding:20px; border-radius:10px; text-align:center; }
+        #sig-canvas { border: 2px dashed #000; background:#fff; width: 350px; height: 150px; touch-action: none; }
+
+        @media print { .no-print, .btn, #sig-modal, .button-bar, .suggestions { display: none !important; } }
     </style>
 </head>
 <body class="locked" id="mainBody">
 
 <div class="container">
-    <div class="branding">
-        <h1>JP INTERIORS</h1>
-        <p>LIMITED</p>
-    </div>
+    <div class="branding"><h1>JP INTERIORS</h1><p>LIMITED</p></div>
 
     <div class="header-grid">
         <div class="field">
@@ -70,18 +66,16 @@
             </select>
         </div>
         <div class="field"><label>DATE START:</label><input type="date" id="dateStart" onchange="generateTable()"></div>
-        <div class="field"><label>POSITION:</label><input type="text" value="Plasterer" readonly></div>
-        <div class="field"><label>PERIOD ENDING:</label><input type="text" id="dateEnd" readonly></div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th width="18%">DAY & DATE</th>
-                <th width="15%">START</th>
-                <th width="15%">FINISH</th>
-                <th width="10%">NO BREAK</th>
-                <th width="10%">TOTAL</th>
+                <th width="15%">DAY & DATE</th>
+                <th width="14%">START</th>
+                <th width="14%">FINISH</th>
+                <th width="8%">NO BREAK</th>
+                <th width="8%">TOTAL</th>
                 <th>SITE / COMMENTS (NZ Address)</th>
             </tr>
         </thead>
@@ -89,56 +83,31 @@
     </table>
 
     <div style="margin-top:20px;">
-        <label style="font-weight:bold;">SIGNATURE:</label>
-        <div id="sig-display" onclick="openSig()" style="border-bottom:2px solid #000; width:250px; height:60px; background:#fafafa; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-            Click to Sign Here
-        </div>
+        <label>SIGNATURE:</label>
+        <div id="sig-display" onclick="openSig()" style="border-bottom:2px solid #000; width:200px; height:50px; background:#fafafa; display:flex; align-items:center; justify-content:center; cursor:pointer;">Click to Sign</div>
     </div>
 
     <div class="button-bar no-print">
-        <div class="left-btns">
+        <div>
             <button class="btn btn-edit" id="editBtn" onclick="toggleEdit(true)">EDIT</button>
             <button class="btn btn-save" id="saveBtn" onclick="toggleEdit(false)" style="display:none;">SAVE</button>
         </div>
-        <div class="right-btns">
+        <div>
             <button class="btn btn-print" onclick="window.print()">PRINT PDF</button>
             <button class="btn btn-clear" onclick="clearAllData()">CLEAR ALL</button>
         </div>
     </div>
 </div>
 
-<div id="sig-modal">
-    <div class="modal-content">
-        <h3>Sign Here</h3>
-        <canvas id="sig-canvas"></canvas><br><br>
-        <button class="btn btn-clear" onclick="clearSig()">Clear</button>
-        <button class="btn btn-save" onclick="saveSig()">Confirm</button>
-        <button class="btn btn-clear" style="background:#e74c3c" onclick="closeSig()">Close</button>
-    </div>
-</div>
-
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=places"></script>
+<div id="sig-modal"><div class="modal-content"><h3>Sign Here</h3><canvas id="sig-canvas"></canvas><br><br>
+    <button class="btn btn-clear" onclick="clearSig()">Clear</button>
+    <button class="btn btn-save" onclick="saveSig()">Confirm</button>
+    <button class="btn btn-clear" style="background:red" onclick="closeSig()">Close</button>
+</div></div>
 
 <script>
     const dtrBody = document.getElementById('dtrBody');
     const daysArr = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-    function toggleEdit(isEditing) {
-        const body = document.getElementById('mainBody');
-        const editBtn = document.getElementById('editBtn');
-        const saveBtn = document.getElementById('saveBtn');
-
-        if (isEditing) {
-            body.classList.remove('locked');
-            editBtn.style.display = 'none';
-            saveBtn.style.display = 'block';
-        } else {
-            body.classList.add('locked');
-            editBtn.style.display = 'block';
-            saveBtn.style.display = 'none';
-            saveToStorage();
-        }
-    }
 
     function createTimeOptions() {
         let options = '<option value="">--:--</option>';
@@ -156,137 +125,142 @@
     function generateTable() {
         const start = document.getElementById('dateStart').value;
         if (!start) return;
-        
-        let startDate = new Date(start);
-        let endDate = new Date(start);
-        endDate.setDate(startDate.getDate() + 13);
-        document.getElementById('dateEnd').value = endDate.toDateString();
-
         dtrBody.innerHTML = "";
         const timeOpts = createTimeOptions();
 
         for (let i = 0; i < 14; i++) {
             if (i === 7) dtrBody.innerHTML += `<tr class="week-spacer"><td colspan="6"></td></tr>`;
-            
             let curr = new Date(start);
-            curr.setDate(startDate.getDate() + i);
+            curr.setDate(curr.getDate() + i);
             let dayName = daysArr[curr.getDay() === 0 ? 6 : curr.getDay() - 1];
             let rowClass = dayName === "Saturday" ? "sat-row" : (dayName === "Sunday" ? "sun-row" : "");
 
             for (let r = 0; r < 3; r++) {
-                const rowId = `row-${i}-${r}`;
                 dtrBody.innerHTML += `
                     <tr class="${rowClass}">
                         <td style="font-size:10px;">${r === 0 ? `<b>${dayName} ${curr.getDate()}</b>` : ""}</td>
-                        <td><select class="time-select" id="s-${i}-${r}">${timeOpts}</select></td>
-                        <td><select class="time-select" id="f-${i}-${r}">${timeOpts}</select></td>
-                        <td><input type="checkbox" id="b-${i}-${r}"></td>
-                        <td id="t-${i}-${r}">0.0</td>
-                        <td><input type="text" class="site-input" id="site-${i}-${r}" placeholder="Type NZ Address..."></td>
+                        <td><select class="time-select" id="s-${i}-${r}" onchange="calcHours(${i},${r})">${timeOpts}</select></td>
+                        <td><select class="time-select" id="f-${i}-${r}" onchange="calcHours(${i},${r})">${timeOpts}</select></td>
+                        <td><input type="checkbox" id="b-${i}-${r}" onchange="calcHours(${i},${r})"></td>
+                        <td id="t-${i}-${r}" style="font-weight:bold;">0.0</td>
+                        <td class="address-container">
+                            <input type="text" class="site-input" id="site-${i}-${r}" placeholder="Search NZ Site..." oninput="searchAddress(this)">
+                            <div class="suggestions" id="suggest-${i}-${r}"></div>
+                        </td>
                     </tr>
                 `;
-                // Add Autocomplete to each input
-                setTimeout(() => initAutocomplete(`site-${i}-${r}`), 100);
             }
         }
         loadFromStorage();
     }
 
-    // Google Maps Autocomplete (Restricted to NZ)
-    function initAutocomplete(inputId) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-        const autocomplete = new google.maps.places.Autocomplete(input, {
-            componentRestrictions: { country: "nz" },
-            fields: ["address_components", "geometry", "name"],
-            types: ["address"]
-        });
+    function calcHours(i, r) {
+        const startVal = document.getElementById(`s-${i}-${r}`).value;
+        const finishVal = document.getElementById(`f-${i}-${r}`).value;
+        const noBreak = document.getElementById(`b-${i}-${r}`).checked;
+        const totalTd = document.getElementById(`t-${i}-${r}`);
+
+        if (!startVal || !finishVal) { totalTd.innerText = "0.0"; return; }
+
+        const parseTime = (t) => {
+            let [time, ampm] = t.split(' ');
+            let [h, m] = time.split(':').map(Number);
+            if (ampm === "PM" && h < 12) h += 12;
+            if (ampm === "AM" && h === 12) h = 0;
+            return h + (m / 60);
+        };
+
+        let diff = parseTime(finishVal) - parseTime(startVal);
+        if (diff < 0) diff = 0;
+
+        // Bawas 0.5 (Unpaid) if diff > 5 hours, Paid 0.5 is already included in worked time
+        if (diff > 0 && !noBreak) {
+            diff = Math.max(0, diff - 0.5); 
+        }
+
+        totalTd.innerText = diff.toFixed(1);
     }
 
-    // Signature Logic
+    async function searchAddress(input) {
+        const query = input.value;
+        const suggestDiv = input.nextElementSibling;
+        if (query.length < 4) { suggestDiv.style.display = 'none'; return; }
+
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=nz&q=${query}`);
+        const data = await response.json();
+        
+        suggestDiv.innerHTML = "";
+        if (data.length > 0) {
+            suggestDiv.style.display = 'block';
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.innerText = item.display_name;
+                div.onclick = () => { input.value = item.display_name; suggestDiv.style.display = 'none'; };
+                suggestDiv.appendChild(div);
+            });
+        }
+    }
+
+    function toggleEdit(isEditing) {
+        document.getElementById('mainBody').className = isEditing ? "" : "locked";
+        document.getElementById('editBtn').style.display = isEditing ? "none" : "block";
+        document.getElementById('saveBtn').style.display = isEditing ? "block" : "none";
+        if (!isEditing) saveToStorage();
+    }
+
+    function saveToStorage() {
+        const rows = [];
+        for(let i=0; i<14; i++) for(let r=0; r<3; r++) {
+            rows.push({
+                s: document.getElementById(`s-${i}-${r}`).value,
+                f: document.getElementById(`f-${i}-${r}`).value,
+                b: document.getElementById(`b-${i}-${r}`).checked,
+                site: document.getElementById(`site-${i}-${r}`).value
+            });
+        }
+        localStorage.setItem('jp_dtr_final_v4', JSON.stringify({ name: document.getElementById('userName').value, start: document.getElementById('dateStart').value, rows }));
+        alert("Saved!");
+    }
+
+    function loadFromStorage() {
+        const saved = JSON.parse(localStorage.getItem('jp_dtr_final_v4'));
+        if (saved) {
+            document.getElementById('userName').value = saved.name;
+            saved.rows.forEach((row, idx) => {
+                const i = Math.floor(idx / 3), r = idx % 3;
+                if(document.getElementById(`s-${i}-${r}`)) {
+                    document.getElementById(`s-${i}-${r}`).value = row.s;
+                    document.getElementById(`f-${i}-${r}`).value = row.f;
+                    document.getElementById(`b-${i}-${r}`).checked = row.b;
+                    document.getElementById(`site-${i}-${r}`).value = row.site;
+                    calcHours(i, r);
+                }
+            });
+        }
+    }
+
+    function clearAllData() { if(confirm("Clear all?")) { localStorage.clear(); location.reload(); } }
+    
+    // Canvas Signature (Same as before but fixed for mobile)
     const canvas = document.getElementById('sig-canvas');
     const ctx = canvas.getContext('2d');
     let drawing = false;
-
-    function openSig() { if(document.getElementById('mainBody').classList.contains('locked')) return; document.getElementById('sig-modal').style.display = 'flex'; canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+    function openSig() { if(document.getElementById('mainBody').classList.contains('locked')) return; document.getElementById('sig-modal').style.display = 'flex'; }
     function closeSig() { document.getElementById('sig-modal').style.display = 'none'; }
     function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
+    function saveSig() { document.getElementById('sig-display').innerHTML = `<img src="${canvas.toDataURL()}" style="height:100%">`; closeSig(); }
+    
     const getPos = (e) => {
         let rect = canvas.getBoundingClientRect();
         let clientX = e.touches ? e.touches[0].clientX : e.clientX;
         let clientY = e.touches ? e.touches[0].clientY : e.clientY;
         return { x: clientX - rect.left, y: clientY - rect.top };
     };
+    canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); let p = getPos(e); ctx.moveTo(p.x, p.y); e.preventDefault(); });
+    canvas.addEventListener('touchmove', (e) => { if(!drawing) return; let p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); });
+    canvas.addEventListener('touchend', () => drawing = false);
 
-    const startDraw = (e) => { drawing = true; draw(e); };
-    const stopDraw = () => { drawing = false; ctx.beginPath(); };
-    const draw = (e) => {
-        if (!drawing) return;
-        e.preventDefault();
-        let pos = getPos(e);
-        ctx.lineWidth = 2; ctx.lineCap = 'round';
-        ctx.lineTo(pos.x, pos.y); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
-    };
-
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDraw);
-    canvas.addEventListener('touchstart', startDraw);
-    canvas.addEventListener('touchmove', draw);
-    canvas.addEventListener('touchend', stopDraw);
-
-    function saveSig() {
-        document.getElementById('sig-display').innerHTML = `<img src="${canvas.toDataURL()}" style="height:100%">`;
-        closeSig();
-    }
-
-    function saveToStorage() {
-        const data = { name: document.getElementById('userName').value, start: document.getElementById('dateStart').value, rows: [] };
-        for(let i=0; i<14; i++){
-            for(let r=0; r<3; r++){
-                const s = document.getElementById(`s-${i}-${r}`);
-                const f = document.getElementById(`f-${i}-${r}`);
-                const b = document.getElementById(`b-${i}-${r}`);
-                const site = document.getElementById(`site-${i}-${r}`);
-                if(s) data.rows.push({ s: s.value, f: f.value, b: b.checked, site: site.value });
-            }
-        }
-        localStorage.setItem('jp_dtr_final_v1', JSON.stringify(data));
-        alert("Data Saved Successfully!");
-    }
-
-    function loadFromStorage() {
-        const saved = localStorage.getItem('jp_dtr_final_v1');
-        if (saved) {
-            const data = JSON.parse(saved);
-            document.getElementById('userName').value = data.name;
-            let idx = 0;
-            for(let i=0; i<14; i++){
-                for(let r=0; r<3; r++){
-                    const row = data.rows[idx];
-                    if(row){
-                        document.getElementById(`s-${i}-${r}`).value = row.s;
-                        document.getElementById(`f-${i}-${r}`).value = row.f;
-                        document.getElementById(`b-${i}-${r}`).checked = row.b;
-                        document.getElementById(`site-${i}-${r}`).value = row.site;
-                    }
-                    idx++;
-                }
-            }
-        }
-    }
-
-    function clearAllData() {
-        if(confirm("Burahin lahat ng data?")) {
-            localStorage.removeItem('jp_dtr_final_v1');
-            location.reload();
-        }
-    }
-
-    window.onload = generateTable;
+    window.onload = () => { generateTable(); };
 </script>
-
 </body>
 </html>
