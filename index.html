@@ -3,84 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Franklin DTR - Professional</title>
+    <title>Professional DTR - Franklin</title>
     <style>
-        body { font-family: 'Helvetica', Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 10px; color: #333; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; box-shadow: 0 0 15px rgba(0,0,0,0.1); border-top: 10px solid #c0392b; }
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 10px; font-size: 12px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-top: 10px solid #c0392b; }
         
-        .header-info { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 15px; }
-        .info-box { flex: 1; min-width: 200px; }
-        .info-box label { font-weight: bold; font-size: 12px; color: #666; display: block; margin-bottom: 5px; }
-        .info-box span { font-size: 16px; border-bottom: 1px solid #ccc; display: block; padding: 2px 0; min-height: 20px; }
+        .header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-weight: bold; color: #666; margin-bottom: 5px; }
+        .input-group input, .input-group select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-        th { background-color: #f8f8f8; color: #555; font-weight: bold; padding: 10px; border: 1px solid #ddd; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f8f8f8; padding: 10px; border: 1px solid #ddd; }
         td { border: 1px solid #ddd; padding: 5px; text-align: center; }
         
-        input { width: 100%; border: none; text-align: center; font-size: 12px; background: transparent; padding: 5px 0; }
-        input[type="text"] { text-align: left; padding-left: 5px; }
-        .total-cell { font-weight: bold; background: #fafafa; }
+        /* Space sa pagitan ng Sunday at Monday */
+        .week-separator { height: 25px; background-color: #f4f4f4; border: none; }
 
+        select.time-select { width: 100%; border: none; background: transparent; cursor: pointer; }
+        input.text-input { width: 95%; border: none; text-align: left; }
+        
         .no-print-section { text-align: center; margin-top: 20px; }
-        .btn-print { background: #c0392b; color: white; border: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-save { background: #c0392b; color: white; border: none; padding: 12px 30px; border-radius: 5px; font-weight: bold; cursor: pointer; }
 
         @media print {
             @page { size: portrait; margin: 10mm; }
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; border-top: none; width: 100%; max-width: 100%; }
             .no-print-section { display: none; }
-            input { border: none; }
+            .container { border: none; width: 100%; }
+            select { -webkit-appearance: none; -moz-appearance: none; appearance: none; border: none; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header-info">
-        <div class="info-box"><label>NAME:</label><span>Franklin Nesperos</span></div>
-        <div class="info-box"><label>DATE (START):</label><span><input type="text" placeholder="-- / -- / --"></span></div>
-        <div class="info-box"><label>POSITION:</label><span>Plasterer</span></div>
-        <div class="info-box"><label>PERIOD ENDING:</label><span><input type="text" placeholder="-- / -- / --"></span></div>
+    <div class="header-grid">
+        <div class="input-group">
+            <label>NAME:</label>
+            <select id="name-select" onchange="checkOther(this)">
+                <option value="Franklin Nesperos">Franklin Nesperos</option>
+                <option value="John Doe">John Doe</option>
+                <option value="Jane Smith">Jane Smith</option>
+                <option value="Other">Type Other...</option>
+            </select>
+            <input type="text" id="custom-name" style="display:none; margin-top:5px;" placeholder="Enter Name">
+        </div>
+        <div class="input-group">
+            <label>DATE (START):</label>
+            <input type="date">
+        </div>
+        <div class="input-group">
+            <label>POSITION:</label>
+            <input type="text" value="Plasterer">
+        </div>
+        <div class="input-group">
+            <label>PERIOD ENDING:</label>
+            <input type="date">
+        </div>
     </div>
 
     <table>
         <thead>
             <tr>
                 <th width="15%">DAY AND DATE</th>
-                <th width="10%">START</th>
-                <th width="10%">FINISH</th>
+                <th width="12%">START</th>
+                <th width="12%">FINISH</th>
                 <th width="8%">NO BREAK</th>
                 <th width="10%">TOTAL</th>
                 <th>SITE / COMMENTS</th>
             </tr>
         </thead>
-        <tbody id="dtr-body">
-            <!-- Bubuo tayo ng 14 rows para sa 2 weeks -->
+        <tbody id="dtr-table">
+            <!-- Script will generate rows -->
         </tbody>
     </table>
 
     <div class="no-print-section">
-        <button class="btn-print" onclick="window.print()">SAVE AS PDF</button>
+        <button class="btn-save" onclick="window.print()">SAVE AS PDF</button>
     </div>
 </div>
 
 <script>
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const tbody = document.getElementById('dtr-body');
+    const tableBody = document.getElementById('dtr-table');
+
+    function createTimeOptions() {
+        let options = '<option value="">--:--</option>';
+        for(let h=0; h<24; h++) {
+            for(let m=0; m<60; m+=30) {
+                let hh = h < 10 ? '0'+h : h;
+                let mm = m < 10 ? '0'+m : m;
+                options += `<option value="${hh}:${mm}">${hh}:${mm}</option>`;
+            }
+        }
+        return options;
+    }
+
+    const timeOptions = createTimeOptions();
 
     for (let i = 0; i < 14; i++) {
+        // Add separator after the first Sunday (7th row)
+        if (i === 7) {
+            let separator = `<tr class="week-separator"><td colspan="6"></td></tr>`;
+            tableBody.insertAdjacentHTML('beforeend', separator);
+        }
+
         let dayName = days[i % 7];
         let row = `
             <tr>
-                <td><input type="text" value="${dayName} ---"></td>
-                <td><input type="text" placeholder="07:30"></td>
-                <td><input type="text" placeholder="17:00"></td>
+                <td><input type="text" class="text-input" value="${dayName}"></td>
+                <td><select class="time-select">${timeOptions}</select></td>
+                <td><select class="time-select">${timeOptions}</select></td>
                 <td><input type="checkbox"></td>
-                <td class="total-cell">0.0</td>
-                <td><input type="text" placeholder="..."></td>
+                <td style="font-weight:bold;">0.0</td>
+                <td><input type="text" class="text-input" placeholder="..."></td>
             </tr>
         `;
-        tbody.insertAdjacentHTML('beforeend', row);
+        tableBody.insertAdjacentHTML('beforeend', row);
+    }
+
+    function checkOther(select) {
+        const customInput = document.getElementById('custom-name');
+        if(select.value === "Other") {
+            customInput.style.display = "block";
+        } else {
+            customInput.style.display = "none";
+        }
     }
 </script>
 
