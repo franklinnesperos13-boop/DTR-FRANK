@@ -3,305 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JP Interiors - DTR with No Break Option</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>Franklin DTR - Fortnightly</title>
     <style>
-        body { font-family: 'Arial', sans-serif; background: #444; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .controls { width: 100%; max-width: 850px; background: #222; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 5px; }
-        .btn-print { background: #28a745; }
-        .btn-edit { background: #ffc107; color: #000; }
-        .btn-save { background: #007bff; }
-        .btn-clear { background: #dc3545; }
+        /* --- LAYOUT SA SCREEN (Walang nagbago rito) --- */
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 14px; }
+        th { background-color: #2196F3; color: white; }
+        input { width: 90%; border: none; text-align: center; font-size: 14px; outline: none; }
+        .btn-container { text-align: center; margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; color: white; margin: 5px; }
+        .print-btn { background-color: #27ae60; }
+        .save-btn { background-color: #2980b9; }
 
-        #timesheet { background: white; width: 210mm; padding: 12mm; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
-        
-        #timesheet::before {
-            content: "JP INTERIORS\a LIMITED"; white-space: pre; position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) rotate(-30deg); font-size: 80px; 
-            color: rgba(173, 216, 230, 0.25); font-weight: 900; text-align: center; z-index: 0; pointer-events: none; width: 100%;
+        /* --- HETO ANG MAGIC PARA SA PDF (LANDSCAPE & SIDE-BY-SIDE) --- */
+        @media print {
+            @page { 
+                size: landscape; 
+                margin: 5mm; 
+            }
+            
+            body { background: white; padding: 0; }
+            .container { max-width: 100% !important; box-shadow: none; padding: 0; margin: 0; }
+            
+            /* Pinipilit ang Tables na magtabi (Flexbox) */
+            .tables-wrapper { 
+                display: flex !important; 
+                flex-direction: row !important; 
+                justify-content: space-between !important; 
+                gap: 10px; 
+                width: 100%;
+            }
+
+            table { 
+                width: 49% !important; /* Halos kalahati ng page ang bawat table */
+                margin-bottom: 0;
+                font-size: 11px; /* Nililiitan para siguradong kasya */
+            }
+
+            th, td { padding: 6px !important; }
+
+            /* Tinatago ang mga buttons sa PDF */
+            .no-print, button, .btn-container { 
+                display: none !important; 
+            }
+            
+            h2 { font-size: 18px; margin-top: 0; }
         }
-
-        .header-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; position: relative; z-index: 1; }
-        .input-row { border-bottom: 1px solid #000; margin-bottom: 10px; display: flex; font-size: 13px; }
-        .input-row label { font-weight: bold; width: 120px; }
-        select, input { border: none; outline: none; background: transparent; font-size: 13px; flex: 1; color: #000; }
-        input:disabled, select:disabled { color: #333; opacity: 1; cursor: not-allowed; }
-
-        table { width: 100%; border-collapse: collapse; font-size: 10px; position: relative; z-index: 1; }
-        th { background: #f0f0f0; border: 1px solid #999; padding: 5px; text-transform: uppercase; }
-        td { border: 1px solid #999; padding: 2px; text-align: center; height: 22px; }
-        
-        .date-col { background: #f9f9f9; font-weight: bold; width: 100px; text-align: left; padding-left: 5px; }
-        .sunday-text { color: red !important; }
-        .week-gap { height: 15px; background: #eee; border: none; }
-        
-        .t-select { width: 100%; border: none; appearance: none; text-align: center; font-size: 10px; background: transparent; }
-        .site-input { width: 100%; border: none; font-size: 10px; outline: none; background: transparent; }
-        .site-container { position: relative; }
-        .sugg { position: absolute; background: white; border: 1px solid #ddd; width: 100%; z-index: 100; display: none; text-align: left; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border-radius: 4px; max-height: 120px; overflow-y: auto; }
-        .s-item { padding: 6px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 10px; color: black; }
-        
-        /* Break Checkbox Style */
-        .break-cell { font-size: 9px; width: 45px; }
-        .break-chk { width: 14px; height: 14px; vertical-align: middle; cursor: pointer; }
-
-        .footer-sig { margin-top: 40px; display: flex; justify-content: space-between; position: relative; z-index: 1; }
-        .sig-box { text-align: center; width: 180px; }
-        .sig-display { width: 100px; height: 40px; border-bottom: 1px solid #000; object-fit: contain; cursor: pointer; }
-
-        #sigModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 9999; }
-        .modal-box { background: white; padding: 20px; border-radius: 10px; width: 350px; text-align: center; }
-        canvas { border: 1px solid #000; width: 100%; height: 150px; touch-action: none; background: #fff; }
     </style>
 </head>
 <body>
 
-    <div class="controls">
-        <button id="btnEdit" class="btn btn-edit" onclick="enableEditing()">✏️ Edit Entries</button>
-        <button id="btnSave" class="btn btn-save" onclick="disableAndSave()" style="display:none;">💾 Save & Lock</button>
-        <button class="btn btn-print" onclick="printPDF()">📄 Print PDF</button>
-        <button class="btn btn-clear" onclick="clearAllData()">🗑️ Reset All</button>
-    </div>
+<div class="container">
+    <h2>DTR: Week 1 & Week 2</h2>
 
-    <div id="timesheet">
-        <div class="header-section">
-            <div>
-                <div class="input-row"><label>NAME:</label>
-                    <select id="userName" disabled>
-                        <option>Franklin Nesperos</option>
-                        <option>Elmer Cabaña</option>
-                        <option>Larry Labrador</option>
-                    </select>
-                </div>
-                <div class="input-row"><label>POSITION:</label><input type="text" id="pos" value="Plasterer" disabled></div>
-            </div>
-            <div>
-                <div class="input-row"><label>DATE (START):</label><input type="date" id="startDate" onchange="syncFromStart()" disabled></div>
-                <div class="input-row"><label>PERIOD ENDING:</label><input type="text" id="displayEnd" readonly></div>
-            </div>
-        </div>
-
-        <table>
+    <!-- Wrapper para sa side-by-side layout sa PDF -->
+    <div class="tables-wrapper">
+        
+        <!-- WEEK 1 TABLE -->
+        <table id="week1">
             <thead>
-                <tr>
-                    <th>DAY AND DATE</th>
-                    <th>START</th>
-                    <th>FINISH</th>
-                    <th title="No lunch deduction">NO BREAK</th>
-                    <th>TOTAL</th>
-                    <th>SITE / COMMENTS</th>
-                </tr>
+                <tr><th colspan="3">WEEK 1</th></tr>
+                <tr><th>Day</th><th>Hours</th><th>Site / Work</th></tr>
             </thead>
-            <tbody id="sheet"></tbody>
-            <tfoot>
-                <tr style="font-weight:bold; background:#eee;">
-                    <td colspan="4" style="text-align:right; padding-right:10px;">GRAND TOTAL (14 DAYS)</td>
-                    <td id="grandTotal">0.0</td>
-                    <td></td>
-                </tr>
-            </tfoot>
+            <tbody>
+                <tr><td>Mon</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Tue</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Wed</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Thu</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Fri</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Sat</td><td><input type="number" value="0"></td><td><input type="text"></td></tr>
+                <tr><td>Sun</td><td><input type="number" value="0"></td><td><input type="text"></td></tr>
+            </tbody>
         </table>
 
-        <div class="footer-sig">
-            <div class="sig-box">
-                <img id="sigDisplay" class="sig-display" onclick="openSig()">
-                <p style="font-size:11px; font-weight:bold;">Employee Signature</p>
-            </div>
-            <div class="sig-box">
-                <div style="height:40px; border-bottom:1px solid #000;"></div>
-                <p style="font-size:11px; font-weight:bold;">Manager Signature</p>
-            </div>
-        </div>
+        <!-- WEEK 2 TABLE -->
+        <table id="week2">
+            <thead>
+                <tr><th colspan="3" style="background-color: #1976D2;">WEEK 2</th></tr>
+                <tr><th>Day</th><th>Hours</th><th>Site / Work</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Mon</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Tue</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Wed</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Thu</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Fri</td><td><input type="number" value="8"></td><td><input type="text"></td></tr>
+                <tr><td>Sat</td><td><input type="number" value="0"></td><td><input type="text"></td></tr>
+                <tr><td>Sun</td><td><input type="number" value="0"></td><td><input type="text"></td></tr>
+            </tbody>
+        </table>
     </div>
 
-    <div id="sigModal">
-        <div class="modal-box">
-            <h3>Digital Signature</h3>
-            <canvas id="canvas"></canvas>
-            <div style="margin-top:10px; display:flex; gap:10px;">
-                <button onclick="clearSig()" style="flex:1; padding:8px;">Clear</button>
-                <button onclick="saveSig()" style="flex:1; padding:8px; background:green; color:white; border:none;">Save</button>
-            </div>
-        </div>
+    <div class="btn-container no-print">
+        <button class="save-btn" onclick="window.print()">Save as PDF</button>
     </div>
+</div>
 
-<script>
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    function generateTimes() {
-        const t = [""];
-        for(let h=0; h<24; h++) {
-            for(let m=0; m<60; m+=15) {
-                let hh = h % 12 || 12; let mm = m.toString().padStart(2, '0');
-                let ampm = h < 12 ? "AM" : "PM"; t.push(`${hh}:${mm} ${ampm}`);
-            }
-        }
-        return t;
-    }
-    const timesList = generateTimes();
-
-    function buildEmptyTable() {
-        const body = document.getElementById('sheet');
-        body.innerHTML = "";
-        for (let w = 0; w < 2; w++) {
-            for (let d = 0; d < 7; d++) {
-                const globalIdx = (w * 7) + d;
-                for (let layer = 0; layer < 3; layer++) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        ${layer === 0 ? `<td class="date-col" rowspan="3" id="date-cell-${globalIdx}">---</td>` : ''}
-                        <td><select class="t-select t-start" onchange="calc(this)" disabled>${timesList.map(t => `<option>${t}</option>`).join('')}</select></td>
-                        <td><select class="t-select t-end" onchange="calc(this)" disabled>${timesList.map(t => `<option>${t}</option>`).join('')}</select></td>
-                        <td class="break-cell"><input type="checkbox" class="break-chk" onchange="calc(this)" disabled></td>
-                        <td class="row-total" style="font-weight:bold">0.0</td>
-                        <td class="site-container">
-                            <input type="text" class="site-input" placeholder="..." oninput="findSiteNZ(this)" disabled>
-                            <div class="sugg"></div>
-                        </td>
-                    `;
-                    body.appendChild(row);
-                }
-            }
-            if(w === 0) body.innerHTML += `<tr class="week-gap"><td colspan="6"></td></tr>`;
-        }
-    }
-
-    function calc(el) {
-        const row = el.closest('tr');
-        const sVal = row.querySelector('.t-start').value;
-        const eVal = row.querySelector('.t-end').value;
-        const noBreak = row.querySelector('.break-chk').checked;
-        let total = 0;
-        if(sVal && eVal) {
-            const s = new Date("1970/01/01 " + sVal);
-            const e = new Date("1970/01/01 " + eVal);
-            let diff = (e - s) / (1000 * 60 * 60);
-            if(diff < 0) diff += 24;
-            // Normal: Minus 30 mins if >= 5 hours. IF "No Break" is checked, DON'T minus.
-            if(!noBreak && diff >= 5) diff -= 0.5;
-            total = diff > 0 ? diff : 0;
-        }
-        row.querySelector('.row-total').textContent = total.toFixed(2).replace('.00', '.0');
-        updateGrand();
-    }
-
-    function updateGrand() {
-        let sum = 0;
-        document.querySelectorAll('.row-total').forEach(td => sum += parseFloat(td.textContent));
-        document.getElementById('grandTotal').textContent = sum.toFixed(2);
-    }
-
-    function syncFromStart() {
-        const startVal = document.getElementById('startDate').value;
-        if(!startVal) return;
-        const startDate = new Date(startVal);
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 13);
-        document.getElementById('displayEnd').value = endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        for(let i=0; i<14; i++) {
-            let curr = new Date(startDate); curr.setDate(startDate.getDate() + i);
-            const cell = document.getElementById(`date-cell-${i}`);
-            cell.innerHTML = `${curr.getDate()} <small>${dayNames[curr.getDay()]}</small>`;
-            if(dayNames[curr.getDay()] === "Sunday") cell.classList.add('sunday-text'); else cell.classList.remove('sunday-text');
-        }
-    }
-
-    function enableEditing() {
-        document.querySelectorAll('input, select').forEach(el => el.disabled = false);
-        document.getElementById('btnEdit').style.display = 'none';
-        document.getElementById('btnSave').style.display = 'inline-block';
-    }
-
-    function disableAndSave() {
-        document.querySelectorAll('input, select').forEach(el => el.disabled = true);
-        document.getElementById('btnEdit').style.display = 'inline-block';
-        document.getElementById('btnSave').style.display = 'none';
-        
-        const data = {
-            name: document.getElementById('userName').value,
-            pos: document.getElementById('pos').value,
-            start: document.getElementById('startDate').value,
-            entries: []
-        };
-        document.querySelectorAll('#sheet tr:not(.week-gap)').forEach(row => {
-            data.entries.push({
-                s: row.querySelector('.t-start').value,
-                e: row.querySelector('.t-end').value,
-                site: row.querySelector('.site-input').value,
-                nb: row.querySelector('.break-chk').checked
-            });
-        });
-        localStorage.setItem('frank_dtr_v5', JSON.stringify(data));
-    }
-
-    function loadData() {
-        const saved = localStorage.getItem('frank_dtr_v5');
-        if(!saved) return;
-        const data = JSON.parse(saved);
-        document.getElementById('userName').value = data.name;
-        document.getElementById('pos').value = data.pos;
-        document.getElementById('startDate').value = data.start;
-        syncFromStart();
-        const rows = document.querySelectorAll('#sheet tr:not(.week-gap)');
-        data.entries.forEach((entry, i) => {
-            if(rows[i]) {
-                rows[i].querySelector('.t-start').value = entry.s;
-                rows[i].querySelector('.t-end').value = entry.e;
-                rows[i].querySelector('.site-input').value = entry.site;
-                rows[i].querySelector('.break-chk').checked = entry.nb;
-                calc(rows[i].querySelector('.t-start'));
-            }
-        });
-        const sig = localStorage.getItem('frank_sig');
-        if(sig) document.getElementById('sigDisplay').src = sig;
-    }
-
-    async function findSiteNZ(inp) {
-        const box = inp.nextElementSibling;
-        if(inp.value.length < 3) { box.style.display='none'; return; }
-        try {
-            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${inp.value},+New+Zealand&limit=5`);
-            const data = await r.json();
-            box.innerHTML = "";
-            if(data.length > 0) {
-                box.style.display='block';
-                data.forEach(d => {
-                    const item = document.createElement('div'); item.className='s-item';
-                    item.textContent = d.display_name.split(', New Zealand')[0];
-                    item.onclick = () => { inp.value = item.textContent; box.style.display='none'; };
-                    box.appendChild(item);
-                });
-            }
-        } catch(e) {}
-    }
-
-    function clearAllData() {
-        if(confirm("Babalik sa zero lahat. Sure ka?")) { localStorage.clear(); location.reload(); }
-    }
-
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    let drawing = false;
-    function openSig() { document.getElementById('sigModal').style.display='flex'; canvas.width = canvas.offsetWidth; ctx.lineWidth=2; }
-    function clearSig() { ctx.clearRect(0,0,canvas.width,canvas.height); }
-    function saveSig() { 
-        const dataURL = canvas.toDataURL();
-        document.getElementById('sigDisplay').src = dataURL; 
-        localStorage.setItem('frank_sig', dataURL);
-        document.getElementById('sigModal').style.display='none'; 
-    }
-    canvas.addEventListener('touchstart', e => { drawing=true; const r=canvas.getBoundingClientRect(); ctx.beginPath(); ctx.moveTo(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top); e.preventDefault(); });
-    canvas.addEventListener('touchmove', e => { if(!drawing) return; const r=canvas.getBoundingClientRect(); ctx.lineTo(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top); ctx.stroke(); });
-    canvas.addEventListener('touchend', () => drawing=false);
-
-    function printPDF() {
-        const element = document.getElementById('timesheet');
-        html2pdf().from(element).set({ margin: 5, filename: 'JP_Interiors_DTR.pdf', html2canvas: { scale: 3 }, jsPDF: { unit: 'mm', format: 'a4' }}).save();
-    }
-
-    buildEmptyTable();
-    window.onload = loadData;
-</script>
 </body>
 </html>
